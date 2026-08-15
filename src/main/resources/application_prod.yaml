@@ -1,0 +1,68 @@
+# ========== 服务基础配置 ==========
+server:
+  port: 8080                  # 服务启动端口
+  servlet:
+    context-path: /           # 项目访问前缀，默认根路径
+    encoding:
+      charset: UTF-8          # 统一请求响应编码
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: HikingAlone         # 应用名称，用于标识、监控、微服务注册
+
+  # ========== 数据库连接配置（启动必填） ==========
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/hiking_alone?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    # Spring Boot 默认 Hikari 连接池调优
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      connection-timeout: 30000
+      idle-timeout: 60000
+
+  # ========== DevTools 热部署 ==========
+  devtools:
+    restart:
+      enabled: true
+      additional-paths: src/main/java
+      exclude: static/**,templates/**
+
+# ========= MyBatis‑Plus配置 =========
+mybatis-plus:
+  # mapper xml文件扫描路径（多表联查依旧可以写xml，和原生mybatis一模一样）
+  mapper-locations: classpath:mapper/**/*.xml
+  # 实体类别名包
+  type-aliases-package: com.ty.hikingalone.entity
+  configuration:
+    map-underscore-to-camel-case: true  # 下划线转驼峰
+  global-config:
+    db-config:
+      id-type: auto   # 主键策略：auto 数据库自增；ASSIGN_ID雪花ID(推荐)
+      table-underline: true # 数据库表名自动下划线
+
+# ========== SpringDoc 接口文档 ==========
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html                      # 文档访问地址
+    tags-sorter: alpha
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan: com.ty.hikingalone.controller
+
+# ========== 日志配置 ==========
+logging:
+  level:
+    com.ty.hikingalone: debug                   # 项目包日志级别，开发设debug
+    org.springframework.web: info
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
