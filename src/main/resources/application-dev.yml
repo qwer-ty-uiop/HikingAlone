@@ -2,14 +2,11 @@
 server:
   port: 8080                  # 服务启动端口
   servlet:
-    context-path: /index           # 项目访问前缀，默认根路径
+    context-path: /           # 项目访问前缀，默认根路径
     encoding:
       charset: UTF-8          # 统一请求响应编码
       enabled: true
       force: true
-  docker:
-    compose:
-      enabled: false
 
 spring:
   application:
