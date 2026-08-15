@@ -48,6 +48,14 @@
             <version>${mybatis-plus.version}</version>
         </dependency>
 
+        <!--测试依赖-->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter-test</artifactId>
+            <version>${mybatis-plus.version}</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- MySQL 驱动，父工程已管理版本，无需手动指定 -->
         <dependency>
             <groupId>com.mysql</groupId>
