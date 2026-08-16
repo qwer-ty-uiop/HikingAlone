@@ -1,29 +1,32 @@
-package com.ty.hikingalone.infrastructure.po;
+package com.ty.hikingalone.infrastructure.training.po;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * 首页横幅持久化对象，与 home_banner 表字段一一对应
+ * 训练计划持久化对象，与 training_plan 表字段一一对应
  */
 @Data
-@TableName("home_banner")
-public class HomeBannerPO {
+@TableName("training_plan")
+public class TrainingPlanPO {
 
     @TableId(type = IdType.AUTO)
     private Long id;
 
+    private Long userId;
+
     private String title;
 
-    private String imageUrl;
+    private String description;
 
-    private String linkUrl;
+    private LocalDate startDate;
 
-    private Integer sort;
+    private LocalDate endDate;
 
     private Integer status;
 
