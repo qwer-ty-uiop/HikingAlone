@@ -4,6 +4,7 @@ import com.ty.hikingalone.application.train.TrainingService;
 import com.ty.hikingalone.common.result.Result;
 import com.ty.hikingalone.controller.training.dto.PlanAbandonDTO;
 import com.ty.hikingalone.controller.training.dto.PlanCreateDTO;
+import com.ty.hikingalone.controller.training.dto.PlanDeleteDTO;
 import com.ty.hikingalone.controller.training.dto.PlanUpdateDTO;
 import com.ty.hikingalone.controller.training.dto.RecordCreateDTO;
 import com.ty.hikingalone.controller.training.dto.RecordUpdateDTO;
@@ -72,6 +73,15 @@ public class TrainingController {
     @PostMapping("/plans/abandon")
     public Result<Void> abandonPlan(@Valid @RequestBody PlanAbandonDTO dto) {
         trainingService.abandonPlan(dto);
+        return Result.success();
+    }
+
+    /**
+     * 物理删除训练计划（级联清理其全部记录，不可恢复）
+     */
+    @PostMapping("/plans/delete")
+    public Result<Void> deletePlan(@Valid @RequestBody PlanDeleteDTO dto) {
+        trainingService.deletePlan(dto);
         return Result.success();
     }
 

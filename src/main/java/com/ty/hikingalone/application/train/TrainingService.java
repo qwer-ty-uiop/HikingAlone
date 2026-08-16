@@ -4,6 +4,7 @@ import com.ty.hikingalone.common.enums.training.TrainingPlanStatusEnum;
 import com.ty.hikingalone.controller.training.converter.TrainingConverter;
 import com.ty.hikingalone.controller.training.dto.PlanAbandonDTO;
 import com.ty.hikingalone.controller.training.dto.PlanCreateDTO;
+import com.ty.hikingalone.controller.training.dto.PlanDeleteDTO;
 import com.ty.hikingalone.controller.training.dto.PlanUpdateDTO;
 import com.ty.hikingalone.controller.training.dto.RecordCreateDTO;
 import com.ty.hikingalone.controller.training.dto.RecordUpdateDTO;
@@ -154,13 +155,26 @@ public class TrainingService {
     }
 
     /**
-     * 软删除计划：置状态为已放弃（幂等）
+     * 放弃计划：仅「进行中」可放弃，置状态为已放弃（保留历史记录与热力图）
+     * <p>状态机：ABANDONED 只能由 IN_PROGRESS 经用户操作进入；已完成/已过期/已放弃 拒绝</p>
      */
     public void abandonPlan(PlanAbandonDTO dto) {
         TrainingPlan plan = requirePlan(dto.getId());
-        if (!TrainingPlanStatusEnum.ABANDONED.getCode().equals(plan.getStatus())) {
-            planRepository.updateStatus(dto.getId(), TrainingPlanStatusEnum.ABANDONED.getCode());
+        if (!TrainingPlanStatusEnum.IN_PROGRESS.getCode().equals(plan.getStatus())) {
+            throw new IllegalArgumentException("仅进行中的计划可以放弃");
         }
+        planRepository.updateStatus(dto.getId(), TrainingPlanStatusEnum.ABANDONED.getCode());
+    }
+
+    /**
+     * 物理删除计划：级联清理事件表、汇总表与训练项，计划与其历史记录从数据库整体移除，事务保证原子性
+     */
+    @Transactional
+    public void deletePlan(PlanDeleteDTO dto) {
+        requirePlan(dto.getId());
+        recordRepository.deleteByPlanId(dto.getId());
+        dailyRepository.deleteByPlanId(dto.getId());
+        planRepository.delete(dto.getId());
     }
 
     /**

@@ -281,7 +281,7 @@
 
 ---
 
-### 8. POST /train/plans/abandon —— 软删除计划（标记已放弃）
+### 8. POST /train/plans/abandon —— 放弃计划（状态置为已放弃）
 
 请求体（`PlanAbandonDTO`）：
 
@@ -291,8 +291,9 @@
 
 规则：
 
-- 将计划 `status` 置为 `0 已放弃`（软删除，不物理删除，历史打卡与热力图保留），并刷新 `update_time`
-- 幂等：已放弃的计划再次调用直接返回成功，不报错
+- 将计划 `status` 置为 `0 已放弃`，并刷新 `update_time`
+- **状态机限制**：仅「进行中」的计划可以放弃；已完成/已过期/已放弃的计划调用返回 `code 400`（提示"仅进行中的计划可以放弃"）
+- 放弃保留计划及其全部历史打卡与热力图数据（非物理删除）
 
 响应：无数据。
 
@@ -302,7 +303,29 @@
 
 ---
 
-### 9. POST /train/records/update —— 编辑单条打卡记录（仅完成量）
+### 9. POST /train/plans/delete —— 物理删除计划（不可恢复）
+
+请求体（`PlanDeleteDTO`）：
+
+```json
+{ "id": 1 }
+```
+
+规则：
+
+- **数据库层面整体删除**：级联清理事件表 `training_record`、每日汇总表 `training_record_daily`、训练项 `training_plan_item` 与计划本体 `training_plan`，同一事务保证原子性
+- 删除后该计划及其全部打卡历史、热力图贡献一并消失，**不可恢复**
+- 计划不存在时返回 `code 400`
+
+响应：无数据。
+
+```json
+{ "code": 200, "message": "操作成功", "data": null, "timestamp": 1755331200000 }
+```
+
+---
+
+### 10. POST /train/records/update —— 编辑单条打卡记录（仅完成量）
 
 请求体（`RecordUpdateDTO`）：
 
@@ -336,7 +359,7 @@
 - **训练项完成度**：`doneValue` —— times 模式 = 汇总表累计 `total_times`；sets 模式 = 累计 `total_sets`。达标 = `doneValue >= 目标值`（times 目标 = `totalTimes`，sets 目标 = `totalSets`）。
 - **训练项剩余任务量**：`remainValue = max(0, 目标值 - doneValue)`（已达标/超额为 0）；times 模式单位=次数，sets 模式单位=组数。前端打卡输入框的可用上限即此值。
 - **计划进度**：`progress = Σ各训练项完成值 / Σ各训练项目标值 × 100`，向上取整截断，封顶 100。
-- **状态流转**：仅当计划处于"进行中"时自动判定——所有训练项达标 → `COMPLETED`；否则当天已超过 `endDate` → `EXPIRED`。判定时机：查询（列表/详情）与提交记录后。
+- **状态机**：`0 已放弃` 只能由「进行中」经用户**放弃**操作进入（已完成/已过期/已放弃拒绝）；`1 进行中 → 2 已完成/3 已过期` 仅当计划处于"进行中"时自动判定——所有训练项达标 → `COMPLETED`；否则当天已超过 `endDate` → `EXPIRED`。判定时机：查询（列表/详情）与提交记录后。**物理删除**（`plans/delete`）不属于状态流转，从数据库整体移除。
 - **错误返回**：参数校验失败、日期格式错误、计划/训练项不存在等统一返回 `code 400`；未预期异常 `code 500`。
 
 ## 变更记录
@@ -353,3 +376,4 @@
 | 2026-08-16 | **新增每日汇总表 `training_record_daily`（双写模型）**：每训练项每天一行（plan+item+date 唯一），提交事务内 1) 事件表 INSERT 明细 + 2) 汇总表 upsert（commit_count+1、按模式累加 total_times/total_sets）；聚合查询（进度/剩余/达标/热力图）改读汇总表，事件表保留提交明细供「最近提交」；`submitRecord` 加 `@Transactional`；事件表补 `idx_plan_date (plan_id, record_date, create_time)` + 全列 NOT NULL |
 | 2026-08-16 | 记录 VO 新增 `id`（记录主键，编辑定位）与 `updateTime`（最近编辑时间，未编辑为 null）；「最近提交」按 `updateTime ?? createTime` 从新到旧 |
 | 2026-08-16 | 新增三个接口：`POST /train/plans/update`（编辑计划含训练项，整表替换 + 删除训练项级联删其事件/汇总记录）、`POST /train/plans/abandon`（软删除置 status=0）、`POST /train/records/update`（编辑记录仅完成量，事件表刷新 update_time + 汇总表按差值调整） |
+| 2026-08-16 | **状态机调整 + 物理删除**：`abandon` 改为仅「进行中」可放弃（已完成/已过期/已放弃拒绝）；新增 `POST /train/plans/delete` **物理删除**（级联清理事件表/汇总表/训练项/计划本体，事务原子，不可恢复），用于前端"删除"按钮 |

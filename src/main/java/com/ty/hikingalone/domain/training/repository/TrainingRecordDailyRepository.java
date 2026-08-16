@@ -32,6 +32,11 @@ public interface TrainingRecordDailyRepository {
     void deleteByItemId(Long itemId);
 
     /**
+     * 按计划删除全部汇总行（物理删除计划时级联清理）
+     */
+    void deleteByPlanId(Long planId);
+
+    /**
      * 保存汇总行：有 id 走更新，无 id 走插入
      */
     void save(TrainingRecordDaily daily);

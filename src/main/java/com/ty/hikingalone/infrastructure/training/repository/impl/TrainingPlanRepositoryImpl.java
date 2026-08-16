@@ -114,6 +114,15 @@ public class TrainingPlanRepositoryImpl implements TrainingPlanRepository {
         planMapper.updateById(po);
     }
 
+    @Override
+    public void delete(Long planId) {
+        itemMapper.delete(
+                new LambdaQueryWrapper<TrainingPlanItemPO>()
+                        .eq(TrainingPlanItemPO::getPlanId, planId)
+        );
+        planMapper.deleteById(planId);
+    }
+
     private TrainingPlan toEntity(TrainingPlanPO po) {
         return TrainingPlan.reconstruct(
                 po.getId(), po.getUserId(), po.getTitle(), po.getDescription(),

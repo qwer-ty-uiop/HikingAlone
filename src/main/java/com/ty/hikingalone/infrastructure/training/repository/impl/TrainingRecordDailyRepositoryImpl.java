@@ -62,6 +62,14 @@ public class TrainingRecordDailyRepositoryImpl implements TrainingRecordDailyRep
     }
 
     @Override
+    public void deleteByPlanId(Long planId) {
+        dailyMapper.delete(
+                new LambdaQueryWrapper<TrainingRecordDailyPO>()
+                        .eq(TrainingRecordDailyPO::getPlanId, planId)
+        );
+    }
+
+    @Override
     public void save(TrainingRecordDaily daily) {
         TrainingRecordDailyPO po = new TrainingRecordDailyPO();
         BeanUtils.copyProperties(daily, po);

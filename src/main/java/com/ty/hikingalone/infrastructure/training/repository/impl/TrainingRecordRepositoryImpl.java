@@ -71,6 +71,14 @@ public class TrainingRecordRepositoryImpl implements TrainingRecordRepository {
         );
     }
 
+    @Override
+    public void deleteByPlanId(Long planId) {
+        recordMapper.delete(
+                new LambdaQueryWrapper<TrainingRecordPO>()
+                        .eq(TrainingRecordPO::getPlanId, planId)
+        );
+    }
+
     private TrainingRecord toEntity(TrainingRecordPO po) {
         return TrainingRecord.reconstruct(
                 po.getId(), po.getPlanId(), po.getItemId(), po.getUserId(),

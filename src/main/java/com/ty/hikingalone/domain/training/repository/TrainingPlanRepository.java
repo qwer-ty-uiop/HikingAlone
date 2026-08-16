@@ -55,4 +55,9 @@ public interface TrainingPlanRepository {
      * 更新计划状态
      */
     void updateStatus(Long id, Integer status);
+
+    /**
+     * 物理删除计划（含其全部训练项）；依赖的事件/汇总记录需先由应用层清理
+     */
+    void delete(Long planId);
 }

@@ -39,4 +39,9 @@ public interface TrainingRecordRepository {
      * 按训练项删除全部提交记录（编辑计划删除训练项时级联清理）
      */
     void deleteByItemId(Long itemId);
+
+    /**
+     * 按计划删除全部提交记录（物理删除计划时级联清理）
+     */
+    void deleteByPlanId(Long planId);
 }
