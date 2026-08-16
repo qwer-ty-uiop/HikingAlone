@@ -1,7 +1,7 @@
 package com.ty.hikingalone.controller.index;
 
 
-import com.ty.hikingalone.application.service.IndexService;
+import com.ty.hikingalone.application.index.IndexService;
 import com.ty.hikingalone.common.result.Result;
 import com.ty.hikingalone.controller.index.vo.HomeBodyVO;
 import lombok.RequiredArgsConstructor;
