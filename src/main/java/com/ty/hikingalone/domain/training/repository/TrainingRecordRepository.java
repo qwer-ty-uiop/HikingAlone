@@ -16,17 +16,12 @@ public interface TrainingRecordRepository {
     List<TrainingRecord> listByUserAndDateRange(Long userId, LocalDate startDate, LocalDate endDate);
 
     /**
-     * 按计划查询全部记录（计划详情回填用）
+     * 按计划查询全部提交记录（计划详情回填用；append 模型下每次提交一条）
      */
     List<TrainingRecord> listByPlanId(Long planId);
 
     /**
-     * 按 计划+训练项+日期 查询当天记录（不存在返回 null）
+     * 追加一条提交记录（每次提交都是一条独立记录，不做查找合并）
      */
-    TrainingRecord findByPlanItemDate(Long planId, Long itemId, LocalDate recordDate);
-
-    /**
-     * 按 计划+训练项+日期 保存或更新记录（重复提交走更新）
-     */
-    void saveOrUpdate(TrainingRecord record);
+    void insert(TrainingRecord record);
 }

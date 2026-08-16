@@ -10,7 +10,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -39,40 +38,15 @@ public class TrainingRecordRepositoryImpl implements TrainingRecordRepository {
                 new LambdaQueryWrapper<TrainingRecordPO>()
                         .eq(TrainingRecordPO::getPlanId, planId)
                         .orderByAsc(TrainingRecordPO::getRecordDate)
+                        .orderByAsc(TrainingRecordPO::getCreateTime)
         ).stream().map(this::toEntity).toList();
     }
 
     @Override
-    public TrainingRecord findByPlanItemDate(Long planId, Long itemId, LocalDate recordDate) {
-        TrainingRecordPO po = recordMapper.selectOne(
-                new LambdaQueryWrapper<TrainingRecordPO>()
-                        .eq(TrainingRecordPO::getPlanId, planId)
-                        .eq(TrainingRecordPO::getItemId, itemId)
-                        .eq(TrainingRecordPO::getRecordDate, recordDate)
-        );
-        return po == null ? null : toEntity(po);
-    }
-
-    @Override
-    public void saveOrUpdate(TrainingRecord record) {
-        TrainingRecordPO existing = recordMapper.selectOne(
-                new LambdaQueryWrapper<TrainingRecordPO>()
-                        .eq(TrainingRecordPO::getPlanId, record.getPlanId())
-                        .eq(TrainingRecordPO::getItemId, record.getItemId())
-                        .eq(TrainingRecordPO::getRecordDate, record.getRecordDate())
-        );
-        if (existing != null) {
-            existing.setCompletedSets(record.getCompletedSets());
-            existing.setCompletedTimes(record.getCompletedTimes());
-            existing.setUpdateTime(LocalDateTime.now());
-            recordMapper.updateById(existing);
-        } else {
-            TrainingRecordPO po = new TrainingRecordPO();
-            BeanUtils.copyProperties(record, po);
-            po.setCreateTime(LocalDateTime.now());
-            po.setUpdateTime(LocalDateTime.now());
-            recordMapper.insert(po);
-        }
+    public void insert(TrainingRecord record) {
+        TrainingRecordPO po = new TrainingRecordPO();
+        BeanUtils.copyProperties(record, po);
+        recordMapper.insert(po);
     }
 
     private TrainingRecord toEntity(TrainingRecordPO po) {

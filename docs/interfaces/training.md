@@ -19,7 +19,9 @@
 |---|---|---|
 | `training_plan` | 训练计划 | title, description, start_date, end_date, status |
 | `training_plan_item` | 计划训练项（一个计划多个项） | name, mode(times/sets), total_times, total_sets, unit, sort |
-| `training_record` | 训练项当天完成记录 | plan_id, item_id, record_date, completed_sets, completed_times |
+| `training_record` | 训练项提交记录（**每次提交追加一条**，事件流，同日可多条） | plan_id, item_id, record_date, completed_sets, completed_times, create_time |
+
+> 注：append 模型要求 `training_record` **不能有 (plan_id, item_id, record_date) 唯一约束**（旧模型曾用 `uk_plan_item_date` 保证一天一条，迁移时已删除）。
 
 枚举：
 
@@ -155,7 +157,7 @@
 }
 ```
 
-说明：`items` 字段结构与 `GET /train` 中一致（含 `doneValue`/`remainValue`/`done`），`progress` 为该计划总进度（0~100）。`records` 为该计划全部每日提交记录（按日期升序，未提交的天不返回），结构同详情接口；`GET /train` 聚合中的 `plans` 亦含 `records`，前端可一次拉取全量记录，无需逐个查询详情。
+说明：`items` 字段结构与 `GET /train` 中一致（含 `doneValue`/`remainValue`/`done`），`progress` 为该计划总进度（0~100）。`records` 为该计划全部提交记录（按日期升序、同日按 `createTime` 升序，未提交的天不返回），结构同详情接口；`GET /train` 聚合中的 `plans` 亦含 `records`，前端可一次拉取全量记录，无需逐个查询详情。
 
 ---
 
@@ -177,13 +179,19 @@
     "progress": 55,
     "items": [],
     "records": [
-      { "date": "2026-08-12", "itemId": 1, "completedSets": 0, "completedTimes": 30 },
-      { "date": "2026-08-14", "itemId": 2, "completedSets": 1, "completedTimes": 30 }
+      { "date": "2026-08-12", "itemId": 1, "completedSets": 0, "completedTimes": 30, "createTime": "2026-08-12T21:05:12" },
+      { "date": "2026-08-14", "itemId": 2, "completedSets": 1, "completedTimes": 30, "createTime": "2026-08-14T19:47:03" }
     ]
   },
   "timestamp": 1755331200000
 }
 ```
+
+`records` 字段说明：
+
+- 按日期升序返回；同日多条按 `createTime` 升序（提交先后）
+- 每条含 `createTime`：本次提交时间（ISO 格式 `yyyy-MM-ddTHH:mm:ss`，精确到秒）。每次提交都追加一条新记录，同一天同一训练项可有多条——前端「最近提交」按 `createTime` 从新到旧取最近 N 条
+- 热力图按「记录条数」统计：同一天提交 N 次就是 N 条记录，`totalCount` 等于当年真实提交次数
 
 ---
 
@@ -205,7 +213,7 @@
 
 - `times` 模式：`completedTimes` = 当天完成总次数（缺省记 0），`completedSets` 忽略（记 0）
 - `sets` 模式：`completedSets` = 当天完成组数（缺省记 0）；`completedTimes` = 每组次数，**不传则默认取计划项的 `totalTimes`**
-- 同一天对同一训练项重复提交 = **累加**（每次提交的是本次完成量，与当天已提交值相加，按 plan+item+date 唯一）
+- **每次提交追加一条记录**（append）：同一天同一训练项可提交多次，每次都是一条独立的 `training_record`，各自记录提交时间；完成度 = 该训练项所有记录之和
 
 响应：无数据。
 
@@ -238,7 +246,7 @@
 ## 业务规则
 
 - **热力图 count**：按用户+年份统计每天 `training_record` 的**记录条数**（即当天提交了几次，不是完成的次数/组数总和）；未提交的天不返回。
-- **热力图 totalCount**：该年份提交总次数，即全年每天 `count` 之和（等价于该用户该年度的记录总条数）。
+- **热力图 totalCount**：该年份提交总次数 = 当年记录总条数。append 模型下每次提交都新增一条，因此**每次打卡 totalCount +1**（同日多次提交会累加）。
 - **训练项完成度**：`doneValue` —— times 模式 = 累计 `completedTimes`；sets 模式 = 累计 `completedSets`。达标 = `doneValue >= 目标值`（times 目标 = `totalTimes`，sets 目标 = `totalSets`）。
 - **训练项剩余任务量**：`remainValue = max(0, 目标值 - doneValue)`（已达标/超额为 0）；times 模式单位=次数，sets 模式单位=组数。前端打卡输入框的可用上限即此值。
 - **计划进度**：`progress = Σ各训练项完成值 / Σ各训练项目标值 × 100`，向上取整截断，封顶 100。
@@ -254,3 +262,5 @@
 | 2026-08-16 | 热力图新增 `totalCount` 字段：年份提交总次数（全年每天记录条数之和） |
 | 2026-08-16 | 训练项新增 `remainValue` 字段：剩余任务量（目标值-已完成值，已达标为 0） |
 | 2026-08-16 | 提交语义修正：同一天同一训练项**重复提交改为累加**（每次提交量 = 本次完成量，不覆盖当天已提交值）；原「重复提交走覆盖更新」废弃 |
+| 2026-08-16 | 每日记录新增 `updateTime` 字段（最近提交时间，ISO 到秒）；records 同日多条按 `updateTime` 升序，前端「最近提交」按 `updateTime` 从新到旧 |
+| 2026-08-16 | **记录模型改为 append（事件流）**：每次提交追加一条 `training_record`，不再按 plan+item+date 查找合并（`mergeSubmit`/`findByPlanItemDate` 废弃）；同日可多条，记录字段 `updateTime` 更名为 `createTime`（本次提交时间）；完成度 = 该训练项所有记录之和（与原累加结果一致）；热力图 `totalCount` = 当年真实提交次数，每次打卡 +1；**schema：删除唯一索引 `uk_plan_item_date`，历史记录清空** |

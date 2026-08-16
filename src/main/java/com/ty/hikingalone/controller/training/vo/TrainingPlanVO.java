@@ -54,6 +54,11 @@ public class TrainingPlanVO {
         private Integer completedSets;
 
         private Integer completedTimes;
+
+        /**
+         * 本次提交时间（yyyy-MM-dd'T'HH:mm:ss）；append 模型下每条记录一次提交，同日可多条
+         */
+        private String createTime;
     }
 
     /**

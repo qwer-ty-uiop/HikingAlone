@@ -55,6 +55,7 @@ public class TrainingConverter {
             recordVO.setItemId(r.getItemId());
             recordVO.setCompletedSets(r.getCompletedSets());
             recordVO.setCompletedTimes(r.getCompletedTimes());
+            recordVO.setCreateTime(r.getCreateTime() == null ? null : r.getCreateTime().withNano(0).toString());
             return recordVO;
         }).toList());
 
