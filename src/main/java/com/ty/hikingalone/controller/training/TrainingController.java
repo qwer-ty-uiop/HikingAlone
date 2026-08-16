@@ -2,8 +2,11 @@ package com.ty.hikingalone.controller.training;
 
 import com.ty.hikingalone.application.train.TrainingService;
 import com.ty.hikingalone.common.result.Result;
+import com.ty.hikingalone.controller.training.dto.PlanAbandonDTO;
 import com.ty.hikingalone.controller.training.dto.PlanCreateDTO;
+import com.ty.hikingalone.controller.training.dto.PlanUpdateDTO;
 import com.ty.hikingalone.controller.training.dto.RecordCreateDTO;
+import com.ty.hikingalone.controller.training.dto.RecordUpdateDTO;
 import com.ty.hikingalone.controller.training.vo.TrainingHeatmapVO;
 import com.ty.hikingalone.controller.training.vo.TrainingHomePageVO;
 import com.ty.hikingalone.controller.training.vo.TrainingPlanDetailVO;
@@ -55,6 +58,24 @@ public class TrainingController {
     }
 
     /**
+     * 编辑训练计划（含训练项整表替换）
+     */
+    @PostMapping("/plans/update")
+    public Result<Void> updatePlan(@Valid @RequestBody PlanUpdateDTO dto) {
+        trainingService.updatePlan(dto);
+        return Result.success();
+    }
+
+    /**
+     * 软删除训练计划（标记已放弃）
+     */
+    @PostMapping("/plans/abandon")
+    public Result<Void> abandonPlan(@Valid @RequestBody PlanAbandonDTO dto) {
+        trainingService.abandonPlan(dto);
+        return Result.success();
+    }
+
+    /**
      * 训练计划列表（含进度）
      */
     @GetMapping("/plans")
@@ -76,6 +97,15 @@ public class TrainingController {
     @PostMapping("/records")
     public Result<Void> submitRecord(@Valid @RequestBody RecordCreateDTO dto) {
         trainingService.submitRecord(USER_ID, dto);
+        return Result.success();
+    }
+
+    /**
+     * 编辑单条打卡记录（仅完成量）
+     */
+    @PostMapping("/records/update")
+    public Result<Void> updateRecord(@Valid @RequestBody RecordUpdateDTO dto) {
+        trainingService.updateRecord(USER_ID, dto);
         return Result.success();
     }
 

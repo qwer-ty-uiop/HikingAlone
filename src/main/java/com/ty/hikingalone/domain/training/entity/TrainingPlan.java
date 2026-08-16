@@ -60,6 +60,12 @@ public class TrainingPlan {
     }
 
     /**
+     * 训练项编辑规格：比 ItemSpec 多一个可选 id（null=新增），供编辑计划时整表替换训练项
+     */
+    public record ItemEdit(Long id, String name, String mode, Integer totalTimes, Integer totalSets, String unit) {
+    }
+
+    /**
      * 工厂方法：业务校验并创建一个"进行中"的训练计划
      * <p>子实体的创建、排序、归属关系在聚合根内部完成，不暴露给应用层</p>
      */
@@ -130,16 +136,64 @@ public class TrainingPlan {
     }
 
     /**
-     * 各训练项累计完成值：times模式累加每天次数，sets模式累加每天组数
+     * 编辑计划：校验并覆盖计划级字段，按编辑规格整表替换训练项（保留已有 id、新增无 id 的项、重排 sort）。
+     * <p>返回替换后的训练项列表；被删除的旧项由应用层按「编辑后 id 集合差集」计算并级联清理</p>
      */
-    public Map<Long, Integer> doneItems(List<TrainingRecord> records) {
+    public List<TrainingPlanItem> applyEdit(String title, String description,
+                                            LocalDate startDate, LocalDate endDate,
+                                            List<ItemEdit> specs) {
+        if (title == null || title.isBlank()) {
+            throw new IllegalArgumentException("计划标题不能为空");
+        }
+        if (startDate == null || endDate == null) {
+            throw new IllegalArgumentException("周期起止日期不能为空");
+        }
+        if (startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("开始日期不能晚于结束日期");
+        }
+        if (specs == null || specs.isEmpty()) {
+            throw new IllegalArgumentException("至少需要一个训练项");
+        }
+
+        this.title = title;
+        this.description = description;
+        this.startDate = startDate;
+        this.endDate = endDate;
+
+        List<TrainingPlanItem> newItems = new ArrayList<>();
+        for (int i = 0; i < specs.size(); i++) {
+            ItemEdit spec = specs.get(i);
+            TrainingPlanItem item;
+            if (spec.id() != null) {
+                item = items.stream()
+                        .filter(e -> e.getId().equals(spec.id()))
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalArgumentException("训练项不存在"));
+                item.edit(spec.name(), spec.mode(), spec.totalTimes(), spec.totalSets(), spec.unit());
+            } else {
+                item = TrainingPlanItem.create(
+                        new ItemSpec(spec.name(), spec.mode(), spec.totalTimes(), spec.totalSets(), spec.unit()), i);
+                item.setPlanId(id);
+            }
+            item.setSort(i);
+            newItems.add(item);
+        }
+        this.items = newItems;
+        return newItems;
+    }
+
+    /**
+     * 各训练项累计完成值：times模式累加每日次数（totalTimes），sets模式累加每日组数（totalSets）。
+     * 数据源为每日汇总表（每训练项每天一行），事件表只保留提交明细
+     */
+    public Map<Long, Integer> doneItems(List<TrainingRecordDaily> dailies) {
         Map<Long, Integer> doneItems = new HashMap<>();
         for (TrainingPlanItem item : items) {
-            int done = records.stream()
-                    .filter(r -> item.getId().equals(r.getItemId()))
-                    .mapToInt(r -> item.isSetsMode()
-                            ? (r.getCompletedSets() == null ? 0 : r.getCompletedSets())
-                            : (r.getCompletedTimes() == null ? 0 : r.getCompletedTimes()))
+            int done = dailies.stream()
+                    .filter(d -> item.getId().equals(d.getItemId()))
+                    .mapToInt(d -> item.isSetsMode()
+                            ? (d.getTotalSets() == null ? 0 : d.getTotalSets())
+                            : (d.getTotalTimes() == null ? 0 : d.getTotalTimes()))
                     .sum();
             doneItems.put(item.getId(), done);
         }
@@ -160,19 +214,19 @@ public class TrainingPlan {
     /**
      * 是否全部训练项达标
      */
-    public boolean isAllDone(List<TrainingRecord> records) {
+    public boolean isAllDone(List<TrainingRecordDaily> dailies) {
         if (items.isEmpty()) {
             return false;
         }
-        Map<Long, Integer> doneItems = doneItems(records);
+        Map<Long, Integer> doneItems = doneItems(dailies);
         return items.stream().allMatch(item -> item.isDone(doneItems.getOrDefault(item.getId(), 0)));
     }
 
     /**
      * 计划总进度（0~100）：Σ已完成值 / Σ目标值
      */
-    public int progress(List<TrainingRecord> records) {
-        Map<Long, Integer> doneItems = doneItems(records);
+    public int progress(List<TrainingRecordDaily> dailies) {
+        Map<Long, Integer> doneItems = doneItems(dailies);
         int doneTotal = doneItems.values().stream().mapToInt(Integer::intValue).sum();
         int goalTotal = items.stream().mapToInt(TrainingPlanItem::targetValue).sum();
         return goalTotal == 0 ? 0 : Math.min(100, doneTotal * 100 / goalTotal);
@@ -182,12 +236,12 @@ public class TrainingPlan {
      * 状态流转：仅"进行中"时判定——全部达标→已完成；超期未完成→已过期。
      * 返回新状态（未变化返回 null），是否落库由应用层决定
      */
-    public Integer refreshStatus(List<TrainingRecord> records, LocalDate today) {
+    public Integer refreshStatus(List<TrainingRecordDaily> dailies, LocalDate today) {
         if (!TrainingPlanStatusEnum.IN_PROGRESS.getCode().equals(status)) {
             return null;
         }
         Integer newStatus = null;
-        if (isAllDone(records)) {
+        if (isAllDone(dailies)) {
             newStatus = TrainingPlanStatusEnum.COMPLETED.getCode();
         } else if (isExpired(today)) {
             newStatus = TrainingPlanStatusEnum.EXPIRED.getCode();

@@ -48,22 +48,7 @@ public class TrainingPlanItem {
      * <p>由聚合根 TrainingPlan.create 调用，planId 在持久化时由仓储统一赋值</p>
      */
     public static TrainingPlanItem create(TrainingPlan.ItemSpec spec, int sort) {
-        if (spec.name() == null || spec.name().isBlank()) {
-            throw new IllegalArgumentException("训练项名称不能为空");
-        }
-        boolean isSetsMode = TrainingModeEnum.SETS.getCode().equals(spec.mode());
-        boolean isTimesMode = TrainingModeEnum.TIMES.getCode().equals(spec.mode());
-
-        if (!isTimesMode && !isSetsMode) {
-            throw new IllegalArgumentException("训练项制定模式不合法");
-        }
-        if (spec.totalTimes() == null || spec.totalTimes() <= 0) {
-            throw new IllegalArgumentException("目标次数必须大于0");
-        }
-        if (isSetsMode && (spec.totalSets() == null || spec.totalSets() <= 0)) {
-            throw new IllegalArgumentException("sets模式必须填写目标组数");
-        }
-
+        validateSpec(spec.name(), spec.mode(), spec.totalTimes(), spec.totalSets());
         TrainingPlanItem item = new TrainingPlanItem();
         item.setName(spec.name());
         item.setMode(spec.mode());
@@ -72,6 +57,39 @@ public class TrainingPlanItem {
         item.setUnit(spec.unit());
         item.setSort(sort);
         return item;
+    }
+
+    /**
+     * 编辑训练项：按同样规则校验并覆盖可变字段（id/planId/sort 保持不变，由聚合根统一维护）
+     */
+    public void edit(String name, String mode, Integer totalTimes, Integer totalSets, String unit) {
+        validateSpec(name, mode, totalTimes, totalSets);
+        this.name = name;
+        this.mode = mode;
+        this.totalTimes = totalTimes;
+        this.totalSets = totalSets;
+        this.unit = unit;
+    }
+
+    /**
+     * 训练项字段校验：名称/模式/目标量合法性（创建与编辑共用）
+     */
+    private static void validateSpec(String name, String mode, Integer totalTimes, Integer totalSets) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("训练项名称不能为空");
+        }
+        boolean isSetsMode = TrainingModeEnum.SETS.getCode().equals(mode);
+        boolean isTimesMode = TrainingModeEnum.TIMES.getCode().equals(mode);
+
+        if (!isTimesMode && !isSetsMode) {
+            throw new IllegalArgumentException("训练项制定模式不合法");
+        }
+        if (totalTimes == null || totalTimes <= 0) {
+            throw new IllegalArgumentException("目标次数必须大于0");
+        }
+        if (isSetsMode && (totalSets == null || totalSets <= 0)) {
+            throw new IllegalArgumentException("sets模式必须填写目标组数");
+        }
     }
 
     /**

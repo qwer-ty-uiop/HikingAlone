@@ -47,6 +47,41 @@ public class TrainingPlanRepositoryImpl implements TrainingPlanRepository {
     }
 
     @Override
+    public void update(TrainingPlan plan) {
+        TrainingPlanPO po = new TrainingPlanPO();
+        po.setId(plan.getId());
+        po.setTitle(plan.getTitle());
+        po.setDescription(plan.getDescription());
+        po.setStartDate(plan.getStartDate());
+        po.setEndDate(plan.getEndDate());
+        po.setUpdateTime(LocalDateTime.now());
+        planMapper.updateById(po);
+    }
+
+    @Override
+    public void saveItem(TrainingPlanItem item, Long planId) {
+        TrainingPlanItemPO po = new TrainingPlanItemPO();
+        BeanUtils.copyProperties(item, po);
+        po.setId(null);
+        po.setPlanId(planId);
+        itemMapper.insert(po);
+        item.setId(po.getId());
+        item.setPlanId(planId);
+    }
+
+    @Override
+    public void updateItem(TrainingPlanItem item) {
+        TrainingPlanItemPO po = new TrainingPlanItemPO();
+        BeanUtils.copyProperties(item, po);
+        itemMapper.updateById(po);
+    }
+
+    @Override
+    public void deleteItem(Long itemId) {
+        itemMapper.deleteById(itemId);
+    }
+
+    @Override
     public TrainingPlan findById(Long id) {
         TrainingPlanPO po = planMapper.selectById(id);
         return po == null ? null : toEntity(po);

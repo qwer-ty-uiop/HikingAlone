@@ -47,6 +47,8 @@ public class TrainingPlanVO {
     @Data
     public static class RecordVO {
 
+        private Long id;
+
         private String date;
 
         private Long itemId;
@@ -59,6 +61,11 @@ public class TrainingPlanVO {
          * 本次提交时间（yyyy-MM-dd'T'HH:mm:ss）；append 模型下每条记录一次提交，同日可多条
          */
         private String createTime;
+
+        /**
+         * 最近编辑时间（yyyy-MM-dd'T'HH:mm:ss）；未编辑过为 null
+         */
+        private String updateTime;
     }
 
     /**

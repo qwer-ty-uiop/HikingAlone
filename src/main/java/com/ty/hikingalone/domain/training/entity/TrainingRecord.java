@@ -75,6 +75,27 @@ public class TrainingRecord {
     }
 
     /**
+     * 编辑记录：仅重设完成量（按训练项制定模式组装，同 submit 语义），并刷新 updateTime。
+     * <p>不改 planId/itemId/recordDate；createTime 保持首次提交时间不变</p>
+     */
+    public void edit(TrainingPlanItem item, Integer completedSets, Integer completedTimes) {
+        if (item == null) {
+            throw new IllegalArgumentException("训练项不存在");
+        }
+        if (item.isSetsMode()) {
+            this.completedSets = completedSets == null ? 0 : completedSets;
+            this.completedTimes = completedTimes != null ? completedTimes : item.getTotalTimes();
+        } else {
+            this.completedSets = 0;
+            this.completedTimes = completedTimes == null ? 0 : completedTimes;
+        }
+        if (this.completedSets < 0 || this.completedTimes < 0) {
+            throw new IllegalArgumentException("完成量不能为负数");
+        }
+        this.updateTime = LocalDateTime.now();
+    }
+
+    /**
      * 重建工厂：从持久化数据恢复记录，不执行业务校验（数据已合法落库）
      */
     public static TrainingRecord reconstruct(Long id, Long planId, Long itemId, Long userId,

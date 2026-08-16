@@ -21,7 +21,22 @@ public interface TrainingRecordRepository {
     List<TrainingRecord> listByPlanId(Long planId);
 
     /**
+     * 按主键查询单条提交记录（不存在返回 null）
+     */
+    TrainingRecord findById(Long id);
+
+    /**
      * 追加一条提交记录（每次提交都是一条独立记录，不做查找合并）
      */
     void insert(TrainingRecord record);
+
+    /**
+     * 更新单条提交记录的完成量与 updateTime（编辑打卡用）
+     */
+    void update(TrainingRecord record);
+
+    /**
+     * 按训练项删除全部提交记录（编辑计划删除训练项时级联清理）
+     */
+    void deleteByItemId(Long itemId);
 }

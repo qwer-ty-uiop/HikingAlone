@@ -17,6 +17,26 @@ public interface TrainingPlanRepository {
     Long save(TrainingPlan plan);
 
     /**
+     * 更新计划级字段（title/description/startDate/endDate），并刷新 updateTime
+     */
+    void update(TrainingPlan plan);
+
+    /**
+     * 新增一条训练项（planId 由仓储统一赋值），返回后回填 id
+     */
+    void saveItem(TrainingPlanItem item, Long planId);
+
+    /**
+     * 更新一条训练项
+     */
+    void updateItem(TrainingPlanItem item);
+
+    /**
+     * 删除一条训练项
+     */
+    void deleteItem(Long itemId);
+
+    /**
      * 按id查询计划
      */
     TrainingPlan findById(Long id);

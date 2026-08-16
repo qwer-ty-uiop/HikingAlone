@@ -43,10 +43,32 @@ public class TrainingRecordRepositoryImpl implements TrainingRecordRepository {
     }
 
     @Override
+    public TrainingRecord findById(Long id) {
+        TrainingRecordPO po = recordMapper.selectById(id);
+        return po == null ? null : toEntity(po);
+    }
+
+    @Override
     public void insert(TrainingRecord record) {
         TrainingRecordPO po = new TrainingRecordPO();
         BeanUtils.copyProperties(record, po);
         recordMapper.insert(po);
+        record.setId(po.getId());
+    }
+
+    @Override
+    public void update(TrainingRecord record) {
+        TrainingRecordPO po = new TrainingRecordPO();
+        BeanUtils.copyProperties(record, po);
+        recordMapper.updateById(po);
+    }
+
+    @Override
+    public void deleteByItemId(Long itemId) {
+        recordMapper.delete(
+                new LambdaQueryWrapper<TrainingRecordPO>()
+                        .eq(TrainingRecordPO::getItemId, itemId)
+        );
     }
 
     private TrainingRecord toEntity(TrainingRecordPO po) {
