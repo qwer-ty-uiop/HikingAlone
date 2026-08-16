@@ -74,6 +74,23 @@ public class TrainingRecord {
     }
 
     /**
+     * 当天已有记录时合并本次提交（多次提交累加，而非覆盖）：
+     * <p>times模式：当天总次数累加；sets模式：当天组数累加，每组次数取本次新值（未传则保持原值）</p>
+     */
+    public void mergeSubmit(TrainingPlanItem item, Integer completedSets, Integer completedTimes) {
+        if (item.isSetsMode()) {
+            int addSets = completedSets == null ? 0 : completedSets;
+            this.completedSets = (this.completedSets == null ? 0 : this.completedSets) + addSets;
+            if (completedTimes != null) {
+                this.completedTimes = completedTimes;
+            }
+        } else {
+            int addTimes = completedTimes == null ? 0 : completedTimes;
+            this.completedTimes = (this.completedTimes == null ? 0 : this.completedTimes) + addTimes;
+        }
+    }
+
+    /**
      * 重建工厂：从持久化数据恢复记录，不执行业务校验（数据已合法落库）
      */
     public static TrainingRecord reconstruct(Long id, Long planId, Long itemId, Long userId,

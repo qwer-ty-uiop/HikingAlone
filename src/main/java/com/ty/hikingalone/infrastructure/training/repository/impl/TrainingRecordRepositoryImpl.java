@@ -43,6 +43,17 @@ public class TrainingRecordRepositoryImpl implements TrainingRecordRepository {
     }
 
     @Override
+    public TrainingRecord findByPlanItemDate(Long planId, Long itemId, LocalDate recordDate) {
+        TrainingRecordPO po = recordMapper.selectOne(
+                new LambdaQueryWrapper<TrainingRecordPO>()
+                        .eq(TrainingRecordPO::getPlanId, planId)
+                        .eq(TrainingRecordPO::getItemId, itemId)
+                        .eq(TrainingRecordPO::getRecordDate, recordDate)
+        );
+        return po == null ? null : toEntity(po);
+    }
+
+    @Override
     public void saveOrUpdate(TrainingRecord record) {
         TrainingRecordPO existing = recordMapper.selectOne(
                 new LambdaQueryWrapper<TrainingRecordPO>()

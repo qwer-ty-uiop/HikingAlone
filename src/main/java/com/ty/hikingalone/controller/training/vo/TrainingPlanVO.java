@@ -37,6 +37,26 @@ public class TrainingPlanVO {
     private List<ItemVO> items;
 
     /**
+     * 每日提交记录（按日期升序；未提交的天不返回）
+     */
+    private List<RecordVO> records;
+
+    /**
+     * 单日单训练项记录视图对象
+     */
+    @Data
+    public static class RecordVO {
+
+        private String date;
+
+        private Long itemId;
+
+        private Integer completedSets;
+
+        private Integer completedTimes;
+    }
+
+    /**
      * 训练项视图对象
      */
     @Data

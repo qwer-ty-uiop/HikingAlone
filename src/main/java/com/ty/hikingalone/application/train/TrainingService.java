@@ -70,6 +70,7 @@ public class TrainingService {
 
     /**
      * 提交单个训练项当天完成情况：记录组装与校验由 TrainingRecord 工厂完成
+     * <p>同一天重复提交走合并累加（每次提交是本次完成量，而非覆盖当天值）</p>
      */
     public void submitRecord(Long userId, RecordCreateDTO dto) {
         TrainingPlan plan = requirePlan(dto.getPlanId());
@@ -79,11 +80,23 @@ public class TrainingService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("训练项不存在"));
 
-        TrainingRecord record = TrainingRecord.submit(userId, dto.getPlanId(), item,
-                LocalDate.parse(dto.getRecordDate()), dto.getCompletedSets(), dto.getCompletedTimes());
+        LocalDate recordDate = LocalDate.parse(dto.getRecordDate());
+        TrainingRecord existing = recordRepository.findByPlanItemDate(dto.getPlanId(), dto.getItemId(), recordDate);
+        TrainingRecord record = existing != null
+                ? mergeInto(existing, item, dto)
+                : TrainingRecord.submit(userId, dto.getPlanId(), item, recordDate,
+                        dto.getCompletedSets(), dto.getCompletedTimes());
         recordRepository.saveOrUpdate(record);
 
         applyStatusChange(plan, recordRepository.listByPlanId(dto.getPlanId()));
+    }
+
+    /**
+     * 当天已有记录：本次提交量累加进原记录，返回原记录（带 id，走更新）
+     */
+    private TrainingRecord mergeInto(TrainingRecord existing, TrainingPlanItem item, RecordCreateDTO dto) {
+        existing.mergeSubmit(item, dto.getCompletedSets(), dto.getCompletedTimes());
+        return existing;
     }
 
     /**

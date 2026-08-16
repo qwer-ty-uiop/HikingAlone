@@ -21,6 +21,11 @@ public interface TrainingRecordRepository {
     List<TrainingRecord> listByPlanId(Long planId);
 
     /**
+     * 按 计划+训练项+日期 查询当天记录（不存在返回 null）
+     */
+    TrainingRecord findByPlanItemDate(Long planId, Long itemId, LocalDate recordDate);
+
+    /**
      * 按 计划+训练项+日期 保存或更新记录（重复提交走更新）
      */
     void saveOrUpdate(TrainingRecord record);

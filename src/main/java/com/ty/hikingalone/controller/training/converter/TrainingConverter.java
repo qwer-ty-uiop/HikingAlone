@@ -49,6 +49,15 @@ public class TrainingConverter {
         vo.setItems(itemVOs);
         vo.setProgress(plan.progress(records));
 
+        vo.setRecords(records.stream().map(r -> {
+            TrainingPlanVO.RecordVO recordVO = new TrainingPlanVO.RecordVO();
+            recordVO.setDate(r.getRecordDate().toString());
+            recordVO.setItemId(r.getItemId());
+            recordVO.setCompletedSets(r.getCompletedSets());
+            recordVO.setCompletedTimes(r.getCompletedTimes());
+            return recordVO;
+        }).toList());
+
         return vo;
     }
 
@@ -66,15 +75,7 @@ public class TrainingConverter {
         vo.setStatus(base.getStatus());
         vo.setProgress(base.getProgress());
         vo.setItems(base.getItems());
-
-        vo.setRecords(records.stream().map(r -> {
-            TrainingPlanDetailVO.RecordVO recordVO = new TrainingPlanDetailVO.RecordVO();
-            recordVO.setDate(r.getRecordDate().toString());
-            recordVO.setItemId(r.getItemId());
-            recordVO.setCompletedSets(r.getCompletedSets());
-            recordVO.setCompletedTimes(r.getCompletedTimes());
-            return recordVO;
-        }).toList());
+        vo.setRecords(base.getRecords());
         return vo;
     }
 
