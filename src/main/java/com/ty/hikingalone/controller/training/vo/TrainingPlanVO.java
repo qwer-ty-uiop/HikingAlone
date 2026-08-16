@@ -60,6 +60,11 @@ public class TrainingPlanVO {
         private Integer doneValue;
 
         /**
+         * 剩余任务量（目标值-已完成值，已达标为0；times模式=剩余次数；sets模式=剩余组数）
+         */
+        private Integer remainValue;
+
+        /**
          * 该项是否已达标
          */
         private Boolean done;

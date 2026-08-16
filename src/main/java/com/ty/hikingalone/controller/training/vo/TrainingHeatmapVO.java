@@ -16,6 +16,11 @@ public class TrainingHeatmapVO {
     private Integer year;
 
     /**
+     * 今年提交总次数（全年每天提交记录条数之和）
+     */
+    private Integer totalCount;
+
+    /**
      * 每日提交记录数
      */
     private List<DayVO> days;

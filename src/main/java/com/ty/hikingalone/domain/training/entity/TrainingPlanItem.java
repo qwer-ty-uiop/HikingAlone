@@ -111,4 +111,11 @@ public class TrainingPlanItem {
     public boolean isDone(int doneValue) {
         return targetValue() > 0 && doneValue >= targetValue();
     }
+
+    /**
+     * 剩余任务量：目标值扣除已累计完成值；已达标或超额时为 0
+     */
+    public int remainValue(int doneValue) {
+        return Math.max(0, targetValue() - doneValue);
+    }
 }

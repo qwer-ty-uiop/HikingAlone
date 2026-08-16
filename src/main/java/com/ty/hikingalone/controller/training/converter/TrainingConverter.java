@@ -42,6 +42,7 @@ public class TrainingConverter {
             itemVO.setUnit(item.getUnit());
             int done = doneMap.getOrDefault(item.getId(), 0);
             itemVO.setDoneValue(done);
+            itemVO.setRemainValue(item.remainValue(done));
             itemVO.setDone(item.isDone(done));
             return itemVO;
         }).toList();
@@ -83,6 +84,7 @@ public class TrainingConverter {
     public TrainingHeatmapVO toHeatmapVO(Integer year, List<TrainingRecord> records) {
         TrainingHeatmapVO vo = new TrainingHeatmapVO();
         vo.setYear(year);
+        vo.setTotalCount(records.size());
 
         // 按日期分组，统计当天提交的记录条数
         Map<String, Long> countByDate = records.stream()
