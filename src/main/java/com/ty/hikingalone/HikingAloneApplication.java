@@ -5,7 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-@MapperScan("com.ty.hikingalone.infrastructure.mapper")
+@MapperScan("com.ty.hikingalone.infrastructure")
 public class HikingAloneApplication {
 
     public static void main(String[] args) {

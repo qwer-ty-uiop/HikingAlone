@@ -2,8 +2,8 @@ package com.ty.hikingalone.application.index;
 
 import com.ty.hikingalone.controller.index.converter.IndexConverter;
 import com.ty.hikingalone.controller.index.vo.HomeBodyVO;
-import com.ty.hikingalone.domain.repository.HomeBannerRepository;
-import com.ty.hikingalone.domain.repository.NavMenuRepository;
+import com.ty.hikingalone.domain.index.repository.HomeBannerRepository;
+import com.ty.hikingalone.domain.index.repository.NavMenuRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -1,4 +1,4 @@
-package com.ty.hikingalone.common.enums;
+package com.ty.hikingalone.common.enums.index;
 
 import lombok.Getter;
 

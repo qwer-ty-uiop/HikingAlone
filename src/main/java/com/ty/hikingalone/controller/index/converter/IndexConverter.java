@@ -2,8 +2,8 @@ package com.ty.hikingalone.controller.index.converter;
 
 import com.ty.hikingalone.controller.index.vo.HomeBannerVO;
 import com.ty.hikingalone.controller.index.vo.NavMenuVO;
-import com.ty.hikingalone.domain.entity.HomeBanner;
-import com.ty.hikingalone.domain.entity.NavMenu;
+import com.ty.hikingalone.domain.index.entity.HomeBanner;
+import com.ty.hikingalone.domain.index.entity.NavMenu;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 

@@ -37,7 +37,7 @@ mybatis-plus:
   # mapper xml文件扫描路径（多表联查依旧可以写xml，和原生mybatis一模一样）
   mapper-locations: classpath:mapper/**/*.xml
   # 实体类别名包
-  type-aliases-package: com.ty.hikingalone.entity
+  type-aliases-package: com.ty.hikingalone.infrastructure
   configuration:
     map-underscore-to-camel-case: true  # 下划线转驼峰
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 打印sql，开发打开，生产注释掉
