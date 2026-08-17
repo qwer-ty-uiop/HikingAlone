@@ -17,7 +17,7 @@
 
 | 表 | 说明 | 关键字段 |
 |---|---|---|
-| `training_plan` | 训练计划 | title, description, start_date, end_date, status |
+| `training_plan` | 训练计划 | title, description, start_date, end_date, status, cycle_type, cycle_anchor |
 | `training_plan_item` | 计划训练项（一个计划多个项） | name, mode(times/sets), total_times, total_sets, unit, sort |
 | `training_record` | 提交事件表（**每次提交追加一条**，事件流，同日可多条，不可变日志） | plan_id, item_id, record_date, completed_sets, completed_times, create_time |
 | `training_record_daily` | 每日汇总表（**每训练项每天一行**，plan+item+date 唯一，提交时双写维护） | plan_id, item_id, record_date, total_times, total_sets, commit_count |
@@ -31,6 +31,10 @@
 - `status`：0 已放弃（ABANDONED，预留，暂不自动流转）、1 进行中（IN_PROGRESS）、2 已完成（COMPLETED）、3 已过期（EXPIRED）
 - `mode`：`times` 按次数（如 100 个俯卧撑）、`sets` 按次数+组数（如 30 个 × 3 组）
 - `unit`：次数/组/公里等，用户自定义展示单位
+- `cycleType`：0 不重复（NONE，默认，等同老行为）、1 每天（DAILY）、2 每周（WEEKLY）、3 每月（MONTHLY）、4 每年（YEARLY）
+- `cycleAnchor`：周期锚点（int，可空）——每周=星期几（1 周一 ~ 7 周日）；每月=几号（1~31）；每年=月×100+日（如 815 = 8 月 15 日）；空 = 默认锚点（周一 / 1 号 / 1 月 1 日）
+
+**周期（cycleType）语义**：周期计划的目标是「每个周期」的目标——新周期到来时本期进度归零重新累计，但**之前所有完成记录全部保留**（事件表与汇总表不删，热力图/最近提交/记录历史照常展示）。聚合统计（进度/达标/剩余）只读**当前周期**内的每日汇总行；非周期计划（cycleType=0）统计全部记录，行为与历史完全一致。**周期计划永续运行**：不因时间自动流转状态（新周期到了计划仍处于「进行中」，继续按新周期打卡），结束方式只有用户放弃（软删除）或物理删除。
 
 ## 接口清单
 
@@ -64,6 +68,10 @@
         "startDate": "2026-08-10",
         "endDate": "2026-08-30",
         "status": 1,
+        "cycleType": 0,
+        "cycleAnchor": null,
+        "periodStart": null,
+        "periodEnd": null,
         "progress": 55,
         "items": [
           {
@@ -105,6 +113,8 @@
   "description": "坚持每天锻炼",
   "startDate": "2026-08-10",
   "endDate": "2026-08-30",
+  "cycleType": 2,
+  "cycleAnchor": 3,
   "items": [
     { "name": "俯卧撑", "mode": "times", "totalTimes": 100, "totalSets": null, "unit": "个" },
     { "name": "深蹲", "mode": "sets", "totalTimes": 30, "totalSets": 3, "unit": "个" }
@@ -112,7 +122,7 @@
 }
 ```
 
-校验规则：`title` 非空；`startDate`/`endDate` 非空且开始不晚于结束；`items` 至少一项；项内 `name`/`mode`/`totalTimes` 非空；`totalSets` 仅 sets 模式必填。
+校验规则：`title` 非空；`startDate`/`endDate` 非空且开始不晚于结束；`items` 至少一项；项内 `name`/`mode`/`totalTimes` 非空；`totalSets` 仅 sets 模式必填；`cycleType` 缺省为 0（不重复），取值 0~4；`cycleAnchor` 缺省为 null（默认锚点），按周期类型取值——每周 1~7、每月 1~31、每年 月×100+日（日部分 1~31）、每天与不重复必须为空。
 
 响应：`data` 为新计划 id。
 
@@ -140,6 +150,10 @@
       "startDate": "2026-08-15",
       "endDate": "2026-08-25",
       "status": 1,
+      "cycleType": 0,
+      "cycleAnchor": null,
+      "periodStart": null,
+      "periodEnd": null,
       "progress": 0,
       "items": [
         {
@@ -179,6 +193,10 @@
     "startDate": "2026-08-10",
     "endDate": "2026-08-30",
     "status": 1,
+    "cycleType": 2,
+    "cycleAnchor": 1,
+    "periodStart": "2026-08-10",
+    "periodEnd": "2026-08-16",
     "progress": 55,
     "items": [],
     "records": [
@@ -259,6 +277,8 @@
   "description": "坚持每天锻炼",
   "startDate": "2026-08-10",
   "endDate": "2026-08-30",
+  "cycleType": 2,
+  "cycleAnchor": 3,
   "items": [
     { "id": 1, "name": "俯卧撑", "mode": "times", "totalTimes": 100, "totalSets": null, "unit": "个" },
     { "id": null, "name": "深蹲", "mode": "sets", "totalTimes": 30, "totalSets": 3, "unit": "个" }
@@ -268,7 +288,7 @@
 
 规则：
 
-- 计划级字段（title/description/startDate/endDate）整体覆盖更新，并刷新 `update_time`
+- 计划级字段（title/description/startDate/endDate/cycleType/cycleAnchor）整体覆盖更新，并刷新 `update_time`
 - `items` 为**整表替换**：`id` 非空 → 更新对应训练项（名称/模式/目标/单位，`sort` 按数组下标重排）；`id` 为空 → 新增训练项；**DB 中存在但请求未提交的训练项 → 删除**（连同其事件表 `training_record` 与汇总表 `training_record_daily` 一并级联删除，保证无孤儿记录）
 - 校验规则同「制定计划」；`id` 对应的计划不存在时返回 `code 400`
 - **状态保持原值**：编辑不重置计划状态（已放弃/已完成/已过期保持不变）；仅当计划当前为「进行中」时按新数据重判进度与状态流转
@@ -358,8 +378,9 @@
 - **热力图 totalCount**：该年份提交总次数 = 当年各行 `commit_count` 之和。每次打卡 +1（同日多次提交会累加）。
 - **训练项完成度**：`doneValue` —— times 模式 = 汇总表累计 `total_times`；sets 模式 = 累计 `total_sets`。达标 = `doneValue >= 目标值`（times 目标 = `totalTimes`，sets 目标 = `totalSets`）。
 - **训练项剩余任务量**：`remainValue = max(0, 目标值 - doneValue)`（已达标/超额为 0）；times 模式单位=次数，sets 模式单位=组数。前端打卡输入框的可用上限即此值。
-- **计划进度**：`progress = Σ各训练项完成值 / Σ各训练项目标值 × 100`，向上取整截断，封顶 100。
-- **状态机**：`0 已放弃` 只能由「进行中」经用户**放弃**操作进入（已完成/已过期/已放弃拒绝）；`1 进行中 → 2 已完成/3 已过期` 仅当计划处于"进行中"时自动判定——所有训练项达标 → `COMPLETED`；否则当天已超过 `endDate` → `EXPIRED`。判定时机：查询（列表/详情）与提交记录后。**物理删除**（`plans/delete`）不属于状态流转，从数据库整体移除。
+- **计划进度**：`progress = Σ各训练项完成值 / Σ各训练项目标值 × 100`，向上取整截断，封顶 100。周期计划只统计**当前周期**内的完成值（见下）。
+- **周期（cycleType）**：周期计划按自然日历对齐计算「当前周期」`[periodStart, periodEnd]`（与计划开始日期无关）——每天=[当天,当天]；每周=从最近一个锚点星期（缺省周一）到其后第 6 天；每月=本月锚点日（缺省 1 号，超月长取月末）到下月锚点日前一天；每年=本年锚点月日（缺省 1 月 1 日）到次年同日减一天。聚合统计只取当前周期内的每日汇总行；**周期之外的记录全部保留**，仅不参与本期进度/达标/剩余计算。VO 返回 `periodStart`/`periodEnd`（非周期计划为 null）供前端展示「本期」。
+- **状态机**：`0 已放弃` 只能由「进行中」经用户**放弃**操作进入（已完成/已过期/已放弃拒绝）；`1 进行中 → 2 已完成/3 已过期` 仅当计划处于"进行中"时自动判定——**非周期计划**：所有训练项达标 → `COMPLETED`，否则当天已超过 `endDate` → `EXPIRED`；**周期计划**：**不因时间自动流转**——新周期自动重置本期进度，计划始终处于「进行中」（历史遗留的 已完成/已过期 周期计划读取时自动恢复为 进行中；已放弃不恢复，为终态）。判定时机：查询（列表/详情）与提交记录后。**物理删除**（`plans/delete`）不属于状态流转，从数据库整体移除。
 - **错误返回**：参数校验失败、日期格式错误、计划/训练项不存在等统一返回 `code 400`；未预期异常 `code 500`。
 
 ## 变更记录
@@ -377,3 +398,5 @@
 | 2026-08-16 | 记录 VO 新增 `id`（记录主键，编辑定位）与 `updateTime`（最近编辑时间，未编辑为 null）；「最近提交」按 `updateTime ?? createTime` 从新到旧 |
 | 2026-08-16 | 新增三个接口：`POST /train/plans/update`（编辑计划含训练项，整表替换 + 删除训练项级联删其事件/汇总记录）、`POST /train/plans/abandon`（软删除置 status=0）、`POST /train/records/update`（编辑记录仅完成量，事件表刷新 update_time + 汇总表按差值调整） |
 | 2026-08-16 | **状态机调整 + 物理删除**：`abandon` 改为仅「进行中」可放弃（已完成/已过期/已放弃拒绝）；新增 `POST /train/plans/delete` **物理删除**（级联清理事件表/汇总表/训练项/计划本体，事务原子，不可恢复），用于前端"删除"按钮 |
+| 2026-08-16 | **新增计划周期（cycleType/cycleAnchor）**：不重复/每天/每周/每月/每年，每周支持锚点星期（1 周一~7 周日，如 每周3=每周三重置），每月/每年预留锚点（日 / 月×100+日）；进度/达标/剩余只统计当前周期内的汇总行（新周期自动归零重计），周期外记录全部保留（热力图/最近提交/记录历史不变）；周期计划不因周期内达标自动转已完成，仅超期转已过期；`training_plan` 新增 `cycle_type`/`cycle_anchor` 两列，VO 新增 `cycleType`/`cycleAnchor`/`periodStart`/`periodEnd` |
+| 2026-08-17 | **周期计划改为永续进行中**：周期计划不因时间自动流转状态（不再超 `endDate` 转已过期，也不转已完成），新周期自动重置本期进度，计划始终「进行中」，结束方式仅放弃/物理删除；历史遗留的已完成/已过期周期计划读取时自动恢复为进行中（已放弃为终态不恢复） |
