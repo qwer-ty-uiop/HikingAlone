@@ -1,0 +1,84 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: hiking_alone
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # 按顺序手动建库建表：ddl.sql 必须在 data.sql 之前执行
+      - name: Init database
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-mysql-client
+          mysql --host=127.0.0.1 --user=root --password=root hiking_alone < sql/ddl.sql
+          mysql --host=127.0.0.1 --user=root --password=root hiking_alone < sql/data.sql
+
+      # SpringBootTest 启动完整上下文需要真实数据库；-D 命令行参数优先级高于 application-dev.yml
+      - name: Build and test
+        run: |
+          ./mvnw -B verify \
+            -Dspring.datasource.url='jdbc:mysql://127.0.0.1:3306/hiking_alone?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true' \
+            -Dspring.datasource.username=root \
+            -Dspring.datasource.password=root
+
+      - name: Upload jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: hikingalone-jar
+          path: target/*.jar
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: hikingalone-jar
+          path: jar
+
+      - name: Upload jar to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: "jar/*.jar"
+          target: "/tmp/hikingalone/"
+
+      - name: Deploy and restart
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            sudo mv /tmp/hikingalone/*.jar /opt/hikingalone/app.jar
+            sudo systemctl restart hikingalone
