@@ -29,6 +29,16 @@ public class PlanUpdateDTO {
     @NotNull(message = "周期结束日期不能为空")
     private LocalDate endDate;
 
+    /**
+     * 周期类型：0不重复 1每天 2每周 3每月 4每年（缺省 0=不重复，老行为）
+     */
+    private Integer cycleType;
+
+    /**
+     * 周期锚点：每周=星期(1周一~7周日)；每月=日(1~31)；每年=月*100+日(如815=8月15日)；null=默认锚点
+     */
+    private Integer cycleAnchor;
+
     @Valid
     @NotEmpty(message = "至少需要一个训练项")
     private List<Item> items;

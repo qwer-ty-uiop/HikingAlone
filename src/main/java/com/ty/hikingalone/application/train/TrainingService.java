@@ -52,7 +52,8 @@ public class TrainingService {
                 .toList();
         TrainingPlan plan = TrainingPlan.create(
                 userId, dto.getTitle(), dto.getDescription(),
-                dto.getStartDate(), dto.getEndDate(), itemSpecs);
+                dto.getStartDate(), dto.getEndDate(),
+                dto.getCycleType(), dto.getCycleAnchor(), itemSpecs);
         return planRepository.save(plan);
     }
 
@@ -129,7 +130,8 @@ public class TrainingService {
                         i.getId(), i.getName(), i.getMode(), i.getTotalTimes(), i.getTotalSets(), i.getUnit()))
                 .toList();
         List<TrainingPlanItem> newItems = plan.applyEdit(
-                dto.getTitle(), dto.getDescription(), dto.getStartDate(), dto.getEndDate(), specs);
+                dto.getTitle(), dto.getDescription(), dto.getStartDate(), dto.getEndDate(),
+                dto.getCycleType(), dto.getCycleAnchor(), specs);
 
         planRepository.update(plan);
 
@@ -235,10 +237,11 @@ public class TrainingService {
     }
 
     /**
-     * 状态流转判定在聚合根（refreshStatus），应用层只负责把结果落库
+     * 状态流转判定在聚合根（refreshStatus），应用层只负责把结果落库。
+     * 周期计划只取当前周期内的汇总行参与达标判定（周期外历史不影响本期状态）
      */
     private void applyStatusChange(TrainingPlan plan, List<TrainingRecordDaily> dailies) {
-        Integer newStatus = plan.refreshStatus(dailies, LocalDate.now());
+        Integer newStatus = plan.refreshStatus(plan.currentPeriodDailies(dailies, LocalDate.now()), LocalDate.now());
         if (newStatus != null) {
             planRepository.updateStatus(plan.getId(), newStatus);
         }

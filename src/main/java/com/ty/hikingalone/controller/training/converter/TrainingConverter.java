@@ -8,6 +8,7 @@ import com.ty.hikingalone.domain.training.entity.TrainingRecord;
 import com.ty.hikingalone.domain.training.entity.TrainingRecordDaily;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +21,8 @@ public class TrainingConverter {
 
     /**
      * 计划（含已挂载训练项）→ 列表VO
-     * <p>完成度/进度读每日汇总表（dailies，每训练项每天一行）；records 读事件表（events，每次提交一条，供「最近提交」展示）</p>
+     * <p>完成度/进度读每日汇总表（dailies，每训练项每天一行）；records 读事件表（events，每次提交一条，供「最近提交」展示）。
+     * 周期计划只统计当前周期内的汇总行，周期之外的历史记录保留但不计入本期进度</p>
      */
     public TrainingPlanVO toPlanVO(TrainingPlan plan, List<TrainingRecordDaily> dailies, List<TrainingRecord> events) {
         TrainingPlanVO vo = new TrainingPlanVO();
@@ -30,8 +32,18 @@ public class TrainingConverter {
         vo.setStartDate(plan.getStartDate());
         vo.setEndDate(plan.getEndDate());
         vo.setStatus(plan.getStatus());
+        vo.setCycleType(plan.getCycleType());
+        vo.setCycleAnchor(plan.getCycleAnchor());
 
-        Map<Long, Integer> doneMap = plan.doneItems(dailies);
+        LocalDate today = LocalDate.now();
+        TrainingPlan.Period period = plan.currentPeriod(today);
+        if (period != null) {
+            vo.setPeriodStart(period.start());
+            vo.setPeriodEnd(period.end());
+        }
+        List<TrainingRecordDaily> periodDailies = plan.currentPeriodDailies(dailies, today);
+
+        Map<Long, Integer> doneMap = plan.doneItems(periodDailies);
         Map<Long, Integer> goalMap = plan.itemGoals();
         List<TrainingPlanVO.ItemVO> itemVOs = plan.getItems().stream().map(item -> {
             TrainingPlanVO.ItemVO itemVO = new TrainingPlanVO.ItemVO();
@@ -48,7 +60,7 @@ public class TrainingConverter {
             return itemVO;
         }).toList();
         vo.setItems(itemVOs);
-        vo.setProgress(plan.progress(dailies));
+        vo.setProgress(plan.progress(periodDailies));
 
         vo.setRecords(events.stream().map(r -> {
             TrainingPlanVO.RecordVO recordVO = new TrainingPlanVO.RecordVO();

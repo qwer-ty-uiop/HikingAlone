@@ -27,7 +27,27 @@ public class TrainingPlanVO {
     private Integer status;
 
     /**
-     * 总进度百分比（0-100）
+     * 周期类型：0不重复 1每天 2每周 3每月 4每年
+     */
+    private Integer cycleType;
+
+    /**
+     * 周期锚点：每周=星期(1周一~7周日)；每月=日(1~31)；每年=月*100+日；null=默认锚点
+     */
+    private Integer cycleAnchor;
+
+    /**
+     * 当前周期起始日期（周期计划；非周期为 null）
+     */
+    private LocalDate periodStart;
+
+    /**
+     * 当前周期结束日期（周期计划；非周期为 null）
+     */
+    private LocalDate periodEnd;
+
+    /**
+     * 总进度百分比（0-100），周期计划为本期进度
      */
     private Integer progress;
 

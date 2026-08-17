@@ -54,6 +54,8 @@ public class TrainingPlanRepositoryImpl implements TrainingPlanRepository {
         po.setDescription(plan.getDescription());
         po.setStartDate(plan.getStartDate());
         po.setEndDate(plan.getEndDate());
+        po.setCycleType(plan.getCycleType());
+        po.setCycleAnchor(plan.getCycleAnchor());
         po.setUpdateTime(LocalDateTime.now());
         planMapper.updateById(po);
     }
@@ -126,8 +128,8 @@ public class TrainingPlanRepositoryImpl implements TrainingPlanRepository {
     private TrainingPlan toEntity(TrainingPlanPO po) {
         return TrainingPlan.reconstruct(
                 po.getId(), po.getUserId(), po.getTitle(), po.getDescription(),
-                po.getStartDate(), po.getEndDate(), po.getStatus(),
-                po.getCreateTime(), po.getUpdateTime());
+                po.getStartDate(), po.getEndDate(), po.getCycleType(), po.getCycleAnchor(),
+                po.getStatus(), po.getCreateTime(), po.getUpdateTime());
     }
 
     private TrainingPlanItem toItemEntity(TrainingPlanItemPO po) {
