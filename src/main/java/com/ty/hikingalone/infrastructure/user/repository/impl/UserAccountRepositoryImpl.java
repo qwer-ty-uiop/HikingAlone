@@ -1,5 +1,6 @@
 package com.ty.hikingalone.infrastructure.user.repository.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ty.hikingalone.domain.user.entity.UserAccount;
 import com.ty.hikingalone.domain.user.repository.UserAccountRepository;
 import com.ty.hikingalone.infrastructure.user.mapper.UserAccountMapper;
@@ -25,12 +26,15 @@ public class UserAccountRepositoryImpl implements UserAccountRepository {
                 .createTime(LocalDateTime.now())
                 .updateTime(LocalDateTime.now())
                 .build();
-        return (long) userAccountMapper.insert(accountPO);
+        userAccountMapper.insert(accountPO);
+        userAccount.setId(accountPO.getId());
+        return accountPO.getId();
     }
 
     @Override
     public Long update(UserAccount userAccount) {
         UserAccountPO accountPO = UserAccountPO.builder()
+                .id(userAccount.getId())
                 .email(userAccount.getEmail())
                 .password(userAccount.getPassword())
                 .username(userAccount.getUsername())
@@ -47,7 +51,25 @@ public class UserAccountRepositoryImpl implements UserAccountRepository {
     @Override
     public UserAccount findById(Long id) {
         UserAccountPO accountPO = userAccountMapper.selectById(id);
-        return toEntity(accountPO);
+        return accountPO == null ? null : toEntity(accountPO);
+    }
+
+    @Override
+    public UserAccount findByUsername(String username) {
+        UserAccountPO accountPO = userAccountMapper.selectOne(
+                new LambdaQueryWrapper<UserAccountPO>()
+                        .eq(UserAccountPO::getUsername, username)
+        );
+        return accountPO == null ? null : toEntity(accountPO);
+    }
+
+    @Override
+    public UserAccount findByEmail(String email) {
+        UserAccountPO accountPO = userAccountMapper.selectOne(
+                new LambdaQueryWrapper<UserAccountPO>()
+                        .eq(UserAccountPO::getEmail, email)
+        );
+        return accountPO == null ? null : toEntity(accountPO);
     }
 
     @Override
