@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
- * 用户模块应用服务：接收应用层命令对象，编排领域逻辑与持久化，不依赖接口层
+ * 用户模块应用服务：只做仓储查询、工厂调用与持久化编排，业务规则在领域实体
  */
 @Slf4j
 @Service
@@ -20,7 +20,7 @@ public class UserService {
     private final UserAccountRepository userAccountRepository;
 
     /**
-     * 注册：用户名/邮箱唯一性校验后创建账号，返回新账号
+     * 注册：先查唯一性（仓储），再交给实体工厂创建，最后落库
      */
     public UserAccount register(UserRegisterCmd cmd) {
         if (userAccountRepository.findByUsername(cmd.username()) != null) {
@@ -29,38 +29,31 @@ public class UserService {
         if (cmd.email() != null && userAccountRepository.findByEmail(cmd.email()) != null) {
             throw new IllegalArgumentException("邮箱已被注册");
         }
-        UserAccount account = UserAccount.builder()
-                .username(cmd.username())
-                .password(cmd.password())
-                .email(cmd.email())
-                .build();
+        UserAccount account = UserAccount.register(cmd.username(), cmd.password(), cmd.email());
         userAccountRepository.save(account);
         return account;
     }
 
     /**
-     * 登录：按邮箱查账号并校验密码，返回账号信息
+     * 登录：按邮箱取账号，密码校验交给实体；统一错误提示避免泄露账号是否存在
      */
     public UserAccount login(UserLoginCmd cmd) {
         UserAccount account = userAccountRepository.findByEmail(cmd.email());
-        if (account == null || !account.getPassword().equals(cmd.password())) {
+        if (account == null || !account.verifyPassword(cmd.password())) {
             throw new IllegalArgumentException("邮箱或密码错误");
         }
         return account;
     }
 
     /**
-     * 修改密码：校验旧密码后覆盖新密码
+     * 修改密码：取账号后交给实体校验旧密码并更新，再落库
      */
     public void changePassword(UserChangePasswordCmd cmd) {
         UserAccount account = userAccountRepository.findByEmail(cmd.email());
         if (account == null) {
             throw new IllegalArgumentException("账号不存在");
         }
-        if (!account.getPassword().equals(cmd.oldPassword())) {
-            throw new IllegalArgumentException("旧密码错误");
-        }
-        account.setPassword(cmd.newPassword());
+        account.changePassword(cmd.oldPassword(), cmd.newPassword());
         userAccountRepository.update(account);
     }
 }

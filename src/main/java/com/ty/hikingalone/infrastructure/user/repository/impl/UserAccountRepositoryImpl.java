@@ -81,13 +81,8 @@ public class UserAccountRepositoryImpl implements UserAccountRepository {
     }
 
     private UserAccount toEntity(UserAccountPO accountPO) {
-        return UserAccount.builder()
-                .id(accountPO.getId())
-                .username(accountPO.getUsername())
-                .password(accountPO.getPassword())
-                .email(accountPO.getEmail())
-                .createTime(accountPO.getCreateTime())
-                .updateTime(accountPO.getUpdateTime())
-                .build();
+        return UserAccount.reconstruct(
+                accountPO.getId(), accountPO.getUsername(), accountPO.getPassword(), accountPO.getEmail(),
+                accountPO.getCreateTime(), accountPO.getUpdateTime());
     }
 }
