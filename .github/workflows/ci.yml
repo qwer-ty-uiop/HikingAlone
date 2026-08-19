@@ -43,6 +43,7 @@ jobs:
       # SpringBootTest 启动完整上下文需要真实数据库；-D 命令行参数优先级高于 application-dev.yml
       - name: Build and test
         run: |
+          chmod +x ./mvnw
           ./mvnw -B verify \
             -Dspring.datasource.url='jdbc:mysql://127.0.0.1:3306/hiking_alone?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true' \
             -Dspring.datasource.username=root \
