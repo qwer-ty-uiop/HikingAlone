@@ -254,8 +254,8 @@ public class TrainingPlan {
      * 构造合法日期：月份/日越界时钳制到当月最后一天（如 2月30日 → 2月28/29日）
      */
     private static LocalDate clampDate(int year, int month, int day) {
-        int m = Math.max(1, Math.min(12, month));
-        int d = Math.min(Math.max(1, day), LocalDate.of(year, m, 1).lengthOfMonth());
+        int m = Math.clamp(month, 1, 12);
+        int d = Math.clamp(day, 1, LocalDate.of(year, m, 1).lengthOfMonth());
         return LocalDate.of(year, m, d);
     }
 

@@ -4,6 +4,24 @@ spring:
   docker:
     compose:
       enabled: false
+  mail:
+    host: smtp.qq.com
+    port: 587
+    username: 1962008499@qq.com
+    password:
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+
+register:
+  code:
+    expire: 300 # 验证码有效期 300s
+
 
 server:
   port: 8080

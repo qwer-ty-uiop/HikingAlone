@@ -1,7 +1,7 @@
 package com.ty.hikingalone.application.index;
 
-import com.ty.hikingalone.controller.index.converter.IndexConverter;
-import com.ty.hikingalone.controller.index.vo.HomeBodyVO;
+import com.ty.hikingalone.interfaces.index.converter.IndexConverter;
+import com.ty.hikingalone.interfaces.index.vo.HomeBodyVO;
 import com.ty.hikingalone.domain.index.repository.HomeBannerRepository;
 import com.ty.hikingalone.domain.index.repository.NavMenuRepository;
 import lombok.RequiredArgsConstructor;

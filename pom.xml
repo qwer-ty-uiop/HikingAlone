@@ -100,6 +100,18 @@
             <optional>true</optional>
         </dependency>
 
+        <!--spring‑boot‑starter‑mail 邮件发送-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
+        <!--redis 存储验证码（可选，推荐）-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
         <!-- ========== 测试依赖 ========== -->
         <!-- 官方标准测试套件：包含 JUnit5、MockMvc、AssertJ 等 -->
         <dependency>
