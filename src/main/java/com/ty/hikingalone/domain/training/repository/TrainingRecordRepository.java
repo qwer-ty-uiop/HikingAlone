@@ -3,6 +3,7 @@ package com.ty.hikingalone.domain.training.repository;
 import com.ty.hikingalone.domain.training.entity.TrainingRecord;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -19,6 +20,11 @@ public interface TrainingRecordRepository {
      * 按计划查询全部提交记录（计划详情回填用；append 模型下每次提交一条）
      */
     List<TrainingRecord> listByPlanId(Long planId);
+
+    /**
+     * 按多个计划批量查询提交记录（避免计划列表 N+1 查询）
+     */
+    List<TrainingRecord> listByPlanIds(Collection<Long> planIds);
 
     /**
      * 按主键查询单条提交记录（不存在返回 null）

@@ -10,6 +10,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -37,6 +38,17 @@ public class TrainingRecordRepositoryImpl implements TrainingRecordRepository {
         return recordMapper.selectList(
                 new LambdaQueryWrapper<TrainingRecordPO>()
                         .eq(TrainingRecordPO::getPlanId, planId)
+                        .orderByAsc(TrainingRecordPO::getRecordDate)
+                        .orderByAsc(TrainingRecordPO::getCreateTime)
+        ).stream().map(this::toEntity).toList();
+    }
+
+    @Override
+    public List<TrainingRecord> listByPlanIds(Collection<Long> planIds) {
+        return recordMapper.selectList(
+                new LambdaQueryWrapper<TrainingRecordPO>()
+                        .in(TrainingRecordPO::getPlanId, planIds)
+                        .orderByAsc(TrainingRecordPO::getPlanId)
                         .orderByAsc(TrainingRecordPO::getRecordDate)
                         .orderByAsc(TrainingRecordPO::getCreateTime)
         ).stream().map(this::toEntity).toList();

@@ -14,6 +14,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -36,12 +38,16 @@ public class TrainingPlanRepositoryImpl implements TrainingPlanRepository {
         planMapper.insert(planPO);
         plan.setId(planPO.getId());
 
+        List<TrainingPlanItemPO> itemPOs = new ArrayList<>();
         for (TrainingPlanItem item : plan.getItems()) {
             TrainingPlanItemPO itemPO = new TrainingPlanItemPO();
             BeanUtils.copyProperties(item, itemPO);
             itemPO.setId(null);
             itemPO.setPlanId(planPO.getId());
-            itemMapper.insert(itemPO);
+            itemPOs.add(itemPO);
+        }
+        if (!itemPOs.isEmpty()) {
+            itemMapper.insertBatch(itemPOs);
         }
         return planPO.getId();
     }
@@ -103,6 +109,16 @@ public class TrainingPlanRepositoryImpl implements TrainingPlanRepository {
         return itemMapper.selectList(
                 new LambdaQueryWrapper<TrainingPlanItemPO>()
                         .eq(TrainingPlanItemPO::getPlanId, planId)
+                        .orderByAsc(TrainingPlanItemPO::getSort)
+        ).stream().map(this::toItemEntity).toList();
+    }
+
+    @Override
+    public List<TrainingPlanItem> listItemsByPlanIds(Collection<Long> planIds) {
+        return itemMapper.selectList(
+                new LambdaQueryWrapper<TrainingPlanItemPO>()
+                        .in(TrainingPlanItemPO::getPlanId, planIds)
+                        .orderByAsc(TrainingPlanItemPO::getPlanId)
                         .orderByAsc(TrainingPlanItemPO::getSort)
         ).stream().map(this::toItemEntity).toList();
     }

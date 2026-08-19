@@ -10,6 +10,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -37,6 +38,17 @@ public class TrainingRecordDailyRepositoryImpl implements TrainingRecordDailyRep
         return dailyMapper.selectList(
                 new LambdaQueryWrapper<TrainingRecordDailyPO>()
                         .eq(TrainingRecordDailyPO::getPlanId, planId)
+                        .orderByAsc(TrainingRecordDailyPO::getRecordDate)
+                        .orderByAsc(TrainingRecordDailyPO::getUpdateTime)
+        ).stream().map(this::toEntity).toList();
+    }
+
+    @Override
+    public List<TrainingRecordDaily> listByPlanIds(Collection<Long> planIds) {
+        return dailyMapper.selectList(
+                new LambdaQueryWrapper<TrainingRecordDailyPO>()
+                        .in(TrainingRecordDailyPO::getPlanId, planIds)
+                        .orderByAsc(TrainingRecordDailyPO::getPlanId)
                         .orderByAsc(TrainingRecordDailyPO::getRecordDate)
                         .orderByAsc(TrainingRecordDailyPO::getUpdateTime)
         ).stream().map(this::toEntity).toList();

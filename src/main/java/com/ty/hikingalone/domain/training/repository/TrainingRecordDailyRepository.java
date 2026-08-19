@@ -3,6 +3,7 @@ package com.ty.hikingalone.domain.training.repository;
 import com.ty.hikingalone.domain.training.entity.TrainingRecordDaily;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -20,6 +21,11 @@ public interface TrainingRecordDailyRepository {
      * 按计划查询全部汇总（进度/完成度数据源）
      */
     List<TrainingRecordDaily> listByPlanId(Long planId);
+
+    /**
+     * 按多个计划批量查询汇总（避免计划列表 N+1 查询）
+     */
+    List<TrainingRecordDaily> listByPlanIds(Collection<Long> planIds);
 
     /**
      * 按 计划+训练项+日期 查询当日汇总（不存在返回 null）

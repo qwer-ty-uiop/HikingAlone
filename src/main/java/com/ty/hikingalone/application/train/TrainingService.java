@@ -26,8 +26,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 训练模块应用服务：只做 DTO 转换、流程编排与持久化触发，不含业务规则
@@ -59,15 +63,34 @@ public class TrainingService {
 
     /**
      * 计划列表（含每项完成度与计划总进度）
+     * <p>一次批量查出全部训练项/汇总/事件，按计划分组，避免逐计划查询的 N+1 问题</p>
      */
     public List<TrainingPlanVO> listPlans(Long userId) {
-        return planRepository.listByUserId(userId).stream().map(plan -> {
-            plan.attachItems(planRepository.listItemsByPlanId(plan.getId()));
-            List<TrainingRecordDaily> dailies = dailyRepository.listByPlanId(plan.getId());
-            List<TrainingRecord> records = recordRepository.listByPlanId(plan.getId());
+        List<TrainingPlan> plans = planRepository.listByUserId(userId);
+        if (plans.isEmpty()) {
+            return List.of();
+        }
+        List<Long> planIds = plans.stream().map(TrainingPlan::getId).toList();
+        Map<Long, List<TrainingPlanItem>> itemsByPlan = groupByPlanId(
+                planRepository.listItemsByPlanIds(planIds), TrainingPlanItem::getPlanId);
+        Map<Long, List<TrainingRecordDaily>> dailiesByPlan = groupByPlanId(
+                dailyRepository.listByPlanIds(planIds), TrainingRecordDaily::getPlanId);
+        Map<Long, List<TrainingRecord>> recordsByPlan = groupByPlanId(
+                recordRepository.listByPlanIds(planIds), TrainingRecord::getPlanId);
+        return plans.stream().map(plan -> {
+            plan.attachItems(itemsByPlan.getOrDefault(plan.getId(), List.of()));
+            List<TrainingRecordDaily> dailies = dailiesByPlan.getOrDefault(plan.getId(), List.of());
             applyStatusChange(plan, dailies);
-            return converter.toPlanVO(plan, dailies, records);
+            return converter.toPlanVO(plan, dailies, recordsByPlan.getOrDefault(plan.getId(), List.of()));
         }).toList();
+    }
+
+    /**
+     * 按计划id分组（保留各分组内部原有顺序）
+     */
+    private <T> Map<Long, List<T>> groupByPlanId(List<T> list, Function<T, Long> planIdGetter) {
+        return list.stream().collect(
+                Collectors.groupingBy(planIdGetter, LinkedHashMap::new, Collectors.toList()));
     }
 
     /**

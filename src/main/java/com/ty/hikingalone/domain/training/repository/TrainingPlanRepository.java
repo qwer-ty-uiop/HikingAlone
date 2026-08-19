@@ -3,6 +3,7 @@ package com.ty.hikingalone.domain.training.repository;
 import com.ty.hikingalone.domain.training.entity.TrainingPlan;
 import com.ty.hikingalone.domain.training.entity.TrainingPlanItem;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -50,6 +51,11 @@ public interface TrainingPlanRepository {
      * 按计划查询训练项列表，按排序号升序
      */
     List<TrainingPlanItem> listItemsByPlanId(Long planId);
+
+    /**
+     * 按多个计划批量查询训练项，按计划id、排序号升序（避免计划列表 N+1 查询）
+     */
+    List<TrainingPlanItem> listItemsByPlanIds(Collection<Long> planIds);
 
     /**
      * 更新计划状态
