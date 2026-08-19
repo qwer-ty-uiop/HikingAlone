@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ty.hikingalone.infrastructure.training.mapper.TrainingPlanItemMapper">
+
+    <!-- 批量插入训练项（创建计划时一次写多条，避免 N+1 单条插入） -->
+    <insert id="insertBatch">
+        INSERT INTO training_plan_item (plan_id, name, mode, total_times, total_sets, unit, sort)
+        VALUES
+        <foreach collection="items" item="it" separator=",">
+            (#{it.planId}, #{it.name}, #{it.mode}, #{it.totalTimes}, #{it.totalSets}, #{it.unit}, #{it.sort})
+        </foreach>
+    </insert>
+
+</mapper>
