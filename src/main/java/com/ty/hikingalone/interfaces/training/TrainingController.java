@@ -1,6 +1,7 @@
 package com.ty.hikingalone.interfaces.training;
 
 import com.ty.hikingalone.application.train.TrainingService;
+import com.ty.hikingalone.common.context.LoginUserContext;
 import com.ty.hikingalone.common.result.Result;
 import com.ty.hikingalone.interfaces.training.dto.command.PlanAbandonDTO;
 import com.ty.hikingalone.interfaces.training.dto.command.PlanCreateDTO;
@@ -27,18 +28,13 @@ import java.util.List;
 
 /**
  * 训练模块控制器：接口层，只做 HTTP 适配
- * <p>暂无登录体系，统一使用固定用户 user_id=1</p>
+ * <p>需登录（LoginUserInterceptor 拦截），当前用户 id 从登录会话上下文取</p>
  */
 @Slf4j
 @RestController
 @RequestMapping("/train")
 @RequiredArgsConstructor
 public class TrainingController {
-
-    /**
-     * 暂无登录体系，先固定用户
-     */
-    private static final Long USER_ID = 1L;
 
     private final TrainingService trainingService;
 
@@ -47,7 +43,7 @@ public class TrainingController {
      */
     @GetMapping
     public Result<TrainingHomePageVO> homePage() {
-        return Result.success(trainingService.getHomePage(USER_ID));
+        return Result.success(trainingService.getHomePage(LoginUserContext.getUserId()));
     }
 
     /**
@@ -55,7 +51,7 @@ public class TrainingController {
      */
     @PostMapping("/plans")
     public Result<Long> createPlan(@Valid @RequestBody PlanCreateDTO dto) {
-        return Result.success(trainingService.createPlan(USER_ID, dto));
+        return Result.success(trainingService.createPlan(LoginUserContext.getUserId(), dto));
     }
 
     /**
@@ -63,7 +59,7 @@ public class TrainingController {
      */
     @PostMapping("/plans/update")
     public Result<Void> updatePlan(@Valid @RequestBody PlanUpdateDTO dto) {
-        trainingService.updatePlan(dto);
+        trainingService.updatePlan(LoginUserContext.getUserId(), dto);
         return Result.success();
     }
 
@@ -72,7 +68,7 @@ public class TrainingController {
      */
     @PostMapping("/plans/abandon")
     public Result<Void> abandonPlan(@Valid @RequestBody PlanAbandonDTO dto) {
-        trainingService.abandonPlan(dto);
+        trainingService.abandonPlan(LoginUserContext.getUserId(), dto);
         return Result.success();
     }
 
@@ -81,7 +77,7 @@ public class TrainingController {
      */
     @PostMapping("/plans/delete")
     public Result<Void> deletePlan(@Valid @RequestBody PlanDeleteDTO dto) {
-        trainingService.deletePlan(dto);
+        trainingService.deletePlan(LoginUserContext.getUserId(), dto);
         return Result.success();
     }
 
@@ -90,7 +86,7 @@ public class TrainingController {
      */
     @GetMapping("/plans")
     public Result<List<TrainingPlanVO>> listPlans() {
-        return Result.success(trainingService.listPlans(USER_ID));
+        return Result.success(trainingService.listPlans(LoginUserContext.getUserId()));
     }
 
     /**
@@ -98,7 +94,7 @@ public class TrainingController {
      */
     @GetMapping("/plans/{id}")
     public Result<TrainingPlanDetailVO> getPlanDetail(@PathVariable Long id) {
-        return Result.success(trainingService.getPlanDetail(id));
+        return Result.success(trainingService.getPlanDetail(LoginUserContext.getUserId(), id));
     }
 
     /**
@@ -106,7 +102,7 @@ public class TrainingController {
      */
     @PostMapping("/records")
     public Result<Void> submitRecord(@Valid @RequestBody RecordCreateDTO dto) {
-        trainingService.submitRecord(USER_ID, dto);
+        trainingService.submitRecord(LoginUserContext.getUserId(), dto);
         return Result.success();
     }
 
@@ -115,7 +111,7 @@ public class TrainingController {
      */
     @PostMapping("/records/update")
     public Result<Void> updateRecord(@Valid @RequestBody RecordUpdateDTO dto) {
-        trainingService.updateRecord(USER_ID, dto);
+        trainingService.updateRecord(LoginUserContext.getUserId(), dto);
         return Result.success();
     }
 
@@ -124,6 +120,6 @@ public class TrainingController {
      */
     @GetMapping("/heatmap")
     public Result<TrainingHeatmapVO> getHeatmap(@RequestParam(required = false) Integer year) {
-        return Result.success(trainingService.getHeatmap(USER_ID, year));
+        return Result.success(trainingService.getHeatmap(LoginUserContext.getUserId(), year));
     }
 }

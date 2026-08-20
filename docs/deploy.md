@@ -68,10 +68,10 @@ server {
     }
 
     # 2. 后端 API + 前端 /train 路由分流。
-    #    /home、/train 及其子路径不带尾斜杠也在此正则内（GET /home、GET /train 都是无斜杠请求）。
+    #    /home、/train、/user 及其子路径不带尾斜杠也在此正则内（GET /home、GET /train 都是无斜杠请求）。
     #    浏览器刷新 /train 页面（Accept 含 text/html）时回前端路由 index.html；
     #    其余请求（fetch，Accept: */* 等）反代到后端 —— 与前端 vite proxy 的 bypass 逻辑一致。
-    location ~ ^/(home|train)(/.*)?$ {
+    location ~ ^/(home|train|user)(/.*)?$ {
         if ($http_accept ~* text/html) {
             rewrite ^ /index.html last;
         }
@@ -93,7 +93,7 @@ server {
 }
 ```
 
-> 分流说明：前端只有 `/` 和 `/train` 两个路由（自绘路由，精确匹配），只有这两个路径需要回 index.html，未知路径（如 `/foo`）返回真实 404。`/home`、`/train` 的 API 请求都不带尾斜杠（`fetch('/home')`、`GET /train`），必须用正则 `^/(home|train)(/.*)?$` 匹配，`location /home/` 这类带斜杠前缀匹配不到。`/home` 只有一个 GET 接口且不是前端路由，无需 Accept 分流；`/train` 既是前端路由又是 API 前缀，必须分流。
+> 分流说明：前端只有 `/` 和 `/train` 两个路由（自绘路由，精确匹配），只有这两个路径需要回 index.html，未知路径（如 `/foo`）返回真实 404。`/home`、`/train`、`/user` 的 API 请求都不带尾斜杠（`fetch('/home')`、`GET /train`、`POST /user/login`），必须用正则 `^/(home|train|user)(/.*)?$` 匹配，`location /home/` 这类带斜杠前缀匹配不到。`/home`、`/user` 只有 API 且不是前端路由，无需 Accept 分流；`/train` 既是前端路由又是 API 前缀，必须分流。
 
 ```bash
 sudo mkdir -p /var/www/hikingalone

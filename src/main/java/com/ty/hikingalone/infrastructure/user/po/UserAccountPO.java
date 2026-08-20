@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
-@TableName("user")
+@TableName("`user`")
 public class UserAccountPO {
     @TableId(type = IdType.AUTO)
     private Long id;

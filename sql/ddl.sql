@@ -90,3 +90,16 @@ create table if not exists `training_record_daily` (
     unique key `uk_plan_item_date` (`plan_id`, `item_id`, `record_date`),
     KEY            `idx_user_date` (`user_id`, `record_date`)
 ) ENGINE=InnoDB default CHARSET=utf8mb4 collate=utf8mb4_0900_ai_ci;
+-- hiking_alone.user 定义（用户账号：登录凭证；`user` 为 MySQL 保留字，必须加反引号）
+
+create table if not exists `user` (
+    `id`          bigint not null AUTO_INCREMENT,
+    `username`    varchar(100)  default null COMMENT '用户名（唯一）',
+    `password`    varchar(255)  default null COMMENT '密码（当前明文，生产前改 BCrypt）',
+    `email`       varchar(255)  default null COMMENT '邮箱（登录账号，唯一）',
+    `create_time` datetime      default null,
+    `update_time` datetime      default null,
+    primary key (`id`),
+    unique key `uk_username` (`username`),
+    unique key `uk_email` (`email`)
+) ENGINE=InnoDB default CHARSET=utf8mb4 collate=utf8mb4_0900_ai_ci;

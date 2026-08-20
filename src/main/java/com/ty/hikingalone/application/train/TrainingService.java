@@ -96,8 +96,8 @@ public class TrainingService {
     /**
      * 计划详情（含提交记录）
      */
-    public TrainingPlanDetailVO getPlanDetail(Long planId) {
-        TrainingPlan plan = requirePlan(planId);
+    public TrainingPlanDetailVO getPlanDetail(Long userId, Long planId) {
+        TrainingPlan plan = requireOwnedPlan(userId, planId);
         plan.attachItems(planRepository.listItemsByPlanId(planId));
         List<TrainingRecordDaily> dailies = dailyRepository.listByPlanId(planId);
         List<TrainingRecord> records = recordRepository.listByPlanId(planId);
@@ -112,7 +112,7 @@ public class TrainingService {
      */
     @Transactional
     public void submitRecord(Long userId, RecordCreateDTO dto) {
-        TrainingPlan plan = requirePlan(dto.getPlanId());
+        TrainingPlan plan = requireOwnedPlan(userId, dto.getPlanId());
         plan.attachItems(planRepository.listItemsByPlanId(dto.getPlanId()));
         TrainingPlanItem item = plan.getItems().stream()
                 .filter(i -> i.getId().equals(dto.getItemId()))
@@ -139,8 +139,8 @@ public class TrainingService {
      * 编辑训练计划：计划级字段覆盖更新，训练项整表替换（新增/更新/删除），事务保证原子性
      */
     @Transactional
-    public void updatePlan(PlanUpdateDTO dto) {
-        TrainingPlan plan = requirePlan(dto.getId());
+    public void updatePlan(Long userId, PlanUpdateDTO dto) {
+        TrainingPlan plan = requireOwnedPlan(userId, dto.getId());
         plan.attachItems(planRepository.listItemsByPlanId(dto.getId()));
 
         Set<Long> oldItemIds = new HashSet<>();
@@ -183,8 +183,8 @@ public class TrainingService {
      * 放弃计划：仅「进行中」可放弃，置状态为已放弃（保留历史记录与热力图）
      * <p>状态机：ABANDONED 只能由 IN_PROGRESS 经用户操作进入；已完成/已过期/已放弃 拒绝</p>
      */
-    public void abandonPlan(PlanAbandonDTO dto) {
-        TrainingPlan plan = requirePlan(dto.getId());
+    public void abandonPlan(Long userId, PlanAbandonDTO dto) {
+        TrainingPlan plan = requireOwnedPlan(userId, dto.getId());
         if (!TrainingPlanStatusEnum.IN_PROGRESS.getCode().equals(plan.getStatus())) {
             throw new IllegalArgumentException("仅进行中的计划可以放弃");
         }
@@ -195,8 +195,8 @@ public class TrainingService {
      * 物理删除计划：级联清理事件表、汇总表与训练项，计划与其历史记录从数据库整体移除，事务保证原子性
      */
     @Transactional
-    public void deletePlan(PlanDeleteDTO dto) {
-        requirePlan(dto.getId());
+    public void deletePlan(Long userId, PlanDeleteDTO dto) {
+        requireOwnedPlan(userId, dto.getId());
         recordRepository.deleteByPlanId(dto.getId());
         dailyRepository.deleteByPlanId(dto.getId());
         planRepository.delete(dto.getId());
@@ -211,7 +211,7 @@ public class TrainingService {
         if (record == null) {
             throw new IllegalArgumentException("记录不存在");
         }
-        TrainingPlan plan = requirePlan(record.getPlanId());
+        TrainingPlan plan = requireOwnedPlan(userId, record.getPlanId());
         plan.attachItems(planRepository.listItemsByPlanId(record.getPlanId()));
         TrainingPlanItem item = plan.getItems().stream()
                 .filter(i -> i.getId().equals(record.getItemId()))
@@ -273,6 +273,17 @@ public class TrainingService {
     private TrainingPlan requirePlan(Long planId) {
         TrainingPlan plan = planRepository.findById(planId);
         if (plan == null) {
+            throw new IllegalArgumentException("训练计划不存在");
+        }
+        return plan;
+    }
+
+    /**
+     * 按 id 取计划并校验归属当前用户，防止跨用户越权访问/操作
+     */
+    private TrainingPlan requireOwnedPlan(Long userId, Long planId) {
+        TrainingPlan plan = requirePlan(planId);
+        if (!userId.equals(plan.getUserId())) {
             throw new IllegalArgumentException("训练计划不存在");
         }
         return plan;
