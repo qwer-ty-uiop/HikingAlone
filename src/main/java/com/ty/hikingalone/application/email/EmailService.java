@@ -34,6 +34,12 @@ public class EmailService {
     @Value("${register.code.cool:60}")
     private int coolSeconds;
 
+    /** SMTP 认证邮箱（application.yml spring.mail.username）——发件人必须与认证用户一致，
+     *  否则 QQ 服务器拒绝（501 Mail from address must be same as authorization user）；
+     *  JavaMailSender 不会自动拿 username 当 from，必须显式 setFrom */
+    @Value("${spring.mail.username}")
+    private String mailUsername;
+
     /**
      * 发送验证码到邮箱：
      * <ol>
@@ -57,8 +63,10 @@ public class EmailService {
         verificationCodeStore.markCooling(code, coolSeconds);
         verificationCodeStore.saveCode(code, codeExpireSeconds);
 
-        // 发送邮件：SimpleMailMessage 的 from 由 JavaMailSender 配置（spring.mail.username）自动带出
+        // 发送邮件：from 必须与 SMTP 认证用户一致（spring.mail.username），
+        // 否则 QQ 服务器返回 501 拒绝发送；to 是用户填的接收邮箱
         SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailUsername);
         message.setTo(cmd.email());
         message.setSubject("Hiking Alone 验证码");
         message.setText("您的验证码是：" + code.getCode() + "，有效期 " + codeExpireSeconds / 60 + " 分钟，请勿泄露。");

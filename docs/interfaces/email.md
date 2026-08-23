@@ -12,6 +12,7 @@
 - 验证码**一次性消费**：校验通过后立即从存储删除，防止重放
 - **冷却机制**：同一邮箱 60s 内不能重复发送（`sent=false`），防刷
 - **有效期**：5 分钟（300s），过期自动失效
+- **发件人必须与 SMTP 认证用户一致**：`SimpleMailMessage` 必须显式 `setFrom(spring.mail.username)`，否则 QQ 服务器返回 `501 Mail from address must be same as authorization user`（JavaMailSender 不会自动拿 username 当发件人）
 - 存储维度是 **email**（不是 code）——校验时只需定位「该邮箱存的那条验证码」
 
 ## 领域结构（方案 B：存储抽象进基础设施层）
