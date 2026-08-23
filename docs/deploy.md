@@ -50,7 +50,9 @@ rm -rf /tmp/hikingalone-src
 sudo apt install -y nginx
 ```
 
-创建站点配置 `/etc/nginx/conf.d/hikingalone.conf`：
+> **配置由 CD 自动管理**：Nginx 配置的**唯一源**是前端仓库 `HikingAlone-frontend/deploy/nginx-hikingalone.conf`，每次 push main 的 CD 会自动把它同步到 `/etc/nginx/conf.d/hikingalone.conf` 并 `nginx -t && reload`。首次部署可手动放一份（下面这份即最新版），也可以直接等第一次 CD 部署自动写入。**改 Nginx 配置应改仓库里的源文件再推送，不要只改服务器上的**，否则下次 CD 会覆盖。
+
+创建站点配置 `/etc/nginx/conf.d/hikingalone.conf`（与 `deploy/nginx-hikingalone.conf` 同源，保持最新即可）：
 
 ```nginx
 server {
@@ -81,7 +83,11 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 
-    # 3. 首页：直接返回 index.html；其余未知路径返回真实 404（前端只有 / 和 /train 两个路由）
+    # 3. 前端路由：/ 与 /login 返回 index.html（/login 是登录/注册页，401 跳转或直接刷新都走这里）；
+    #    其余未知路径返回真实 404（前端只有 /、/train、/login 三个路由）
+    location = /login {
+        try_files /index.html =404;
+    }
     location / {
         try_files $uri $uri/ =404;
     }
@@ -93,7 +99,7 @@ server {
 }
 ```
 
-> 分流说明：前端只有 `/` 和 `/train` 两个路由（自绘路由，精确匹配），只有这两个路径需要回 index.html，未知路径（如 `/foo`）返回真实 404。`/home`、`/train`、`/user` 的 API 请求都不带尾斜杠（`fetch('/home')`、`GET /train`、`POST /user/login`），必须用正则 `^/(home|train|user)(/.*)?$` 匹配，`location /home/` 这类带斜杠前缀匹配不到。`/home`、`/user` 只有 API 且不是前端路由，无需 Accept 分流；`/train` 既是前端路由又是 API 前缀，必须分流。
+> 分流说明：前端只有 `/`、`/train`、`/login` 三个路由（自绘路由，精确匹配），只有这三个路径需要回 index.html，未知路径（如 `/foo`）返回真实 404。`/home`、`/train`、`/user` 的 API 请求都不带尾斜杠（`fetch('/home')`、`GET /train`、`POST /user/login`），必须用正则 `^/(home|train|user)(/.*)?$` 匹配，`location /home/` 这类带斜杠前缀匹配不到。`/home`、`/user` 只有 API 且不是前端路由，无需 Accept 分流；`/train` 既是前端路由又是 API 前缀，必须分流。
 
 ```bash
 sudo mkdir -p /var/www/hikingalone
@@ -148,5 +154,35 @@ CI 用 scp 把 jar 传到 `/tmp/hikingalone/`、dist 传到 `/tmp/hikingalone-fr
 
 ## 三、CI/CD 流程说明
 
-- **CI**（push / PR 到 main 都触发）：后端在 MySQL 容器（自动执行 ddl + data）上跑 `mvnw verify`（含 SpringBootTest）；前端 `npm ci` + `tsc && vite build`。产物分别上传 artifact。
-- **CD**（仅 push 到 main 触发）：后端 jar → `/opt/hikingalone/app.jar` 并 `systemctl restart`；前端 dist → `/var/www/hikingalone/`（先清空再移动）。
+- **CI**（push / PR 到 main 都触发）：后端在 MySQL 容器（自动执行 ddl + data）上跑 `mvnw verify`；前端 `npm ci` + `tsc && vite build`。产物分别上传 artifact。
+- **CD**（仅 push 到 main 触发）：
+  - 后端：jar → `/opt/hikingalone/app.jar` 并 `systemctl restart`；`sql/ddl.sql` 同步到服务器执行（`create table if not exists` 幂等，保证表结构跟随代码，**data.sql 不重复执行**）
+  - 前端：dist → `/var/www/hikingalone/`（先清空再移动）；`deploy/nginx-hikingalone.conf` → `/etc/nginx/conf.d/hikingalone.conf` 并 `nginx -t && reload`
+
+## 四、生产环境排错
+
+注册/接口报 `Unexpected token '<'`（前端解析到 HTML 而非 JSON）时，说明请求没打到后端，按序排查：
+
+```bash
+# 1. Nginx 配置是否包含 /user 反代规则（CD 已自动同步的话应有）
+grep -n "user\|train\|home" /etc/nginx/conf.d/hikingalone.conf
+
+# 2. 后端服务是否在跑
+systemctl status hikingalone
+
+# 3. 直连后端（跳过 Nginx）测注册接口——返回 JSON 说明后端 OK，问题在 Nginx/前端
+curl -i -X POST http://127.0.0.1:8080/user/register \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"probe","password":"123456","email":"probe@example.com"}'
+
+# 4. 经 Nginx 测同一接口——若返回 HTML（index.html 或 502 页）说明 Nginx 层没反代成功
+curl -i -X POST http://127.0.0.1/user/register \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"probe","password":"123456","email":"probe@example.com"}'
+
+# 5. 数据库是否有 user 表（没有则注册报 500 JSON，先跑 CD 的 ddl 同步）
+mysql -uroot -proot hiking_alone -e "show tables;"
+
+# 6. 前端目录是否有内容（曾因 CD 路径 bug 被清空过）
+ls /var/www/hikingalone/
+```

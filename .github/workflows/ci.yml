@@ -60,6 +60,8 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           name: hikingalone-jar
@@ -73,6 +75,26 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           source: "jar/*.jar"
           target: "/tmp/hikingalone/"
+
+      # 同步建表脚本并执行：create table if not exists 幂等，保证服务器库结构跟随代码演进
+      # （data.sql 不重复执行，避免种子数据重复插入）
+      - name: Upload DDL
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: "sql/ddl.sql"
+          target: "/tmp/hikingalone/"
+
+      - name: Apply database schema
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            mysql -uroot -proot hiking_alone < /tmp/hikingalone/ddl.sql
 
       - name: Deploy and restart
         uses: appleboy/ssh-action@v1.2.0
