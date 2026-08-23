@@ -16,6 +16,26 @@ spring:
       connection-timeout: 30000
       idle-timeout: 60000
 
+  # ========== Redis（邮箱验证码存储，生产必配） ==========
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+
+  # ========== 邮件发送（验证码） ==========
+  mail:
+    host: smtp.qq.com
+    port: 587
+    username: 1962008499@qq.com
+    password: ""   # TODO: 填 QQ 邮箱 SMTP 授权码（不是登录密码）
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
 server:
   port: 8080
   servlet:

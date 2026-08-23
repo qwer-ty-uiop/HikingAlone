@@ -21,6 +21,7 @@ spring:
 register:
   code:
     expire: 300 # 验证码有效期 300s
+    cool: 60    # 同一邮箱发送冷却 60s（防刷）
 
 
 server:
