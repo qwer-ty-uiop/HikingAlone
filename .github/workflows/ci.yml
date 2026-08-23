@@ -75,6 +75,8 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           source: "jar/*.jar"
           target: "/tmp/hikingalone/"
+          # scp-action 用 tar 保留 source 目录结构；strip_components: 1 去掉 jar/ 层，jar 直接落在 /tmp/hikingalone/
+          strip_components: 1
 
       # 同步建表脚本并执行：create table if not exists 幂等，保证服务器库结构跟随代码演进
       # （data.sql 不重复执行，避免种子数据重复插入）
@@ -86,6 +88,8 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           source: "sql/ddl.sql"
           target: "/tmp/hikingalone/"
+          # 同上：去掉 sql/ 层，文件直接落在 /tmp/hikingalone/ddl.sql
+          strip_components: 1
 
       - name: Apply database schema
         uses: appleboy/ssh-action@v1.2.0
@@ -94,6 +98,9 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
+            set -e
+            ls -la /tmp/hikingalone/
+            test -f /tmp/hikingalone/ddl.sql || { echo "ddl.sql not uploaded"; exit 1; }
             mysql -uroot -proot hiking_alone < /tmp/hikingalone/ddl.sql
 
       - name: Deploy and restart
@@ -103,5 +110,10 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
+            set -e
+            ls -la /tmp/hikingalone/
             sudo mv /tmp/hikingalone/*.jar /opt/hikingalone/app.jar
             sudo systemctl restart hikingalone
+            sleep 8
+            # 自检：jar 替换后后端应能响应 /home
+            curl -s -o /dev/null -w "backend /home -> %{http_code}\n" http://127.0.0.1:8080/home || echo "WARN: backend not responding yet"
