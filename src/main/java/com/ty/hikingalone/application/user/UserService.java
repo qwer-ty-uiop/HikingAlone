@@ -1,5 +1,7 @@
 package com.ty.hikingalone.application.user;
 
+import com.ty.hikingalone.application.email.EmailService;
+import com.ty.hikingalone.application.email.cmd.VerifyCodeCmd;
 import com.ty.hikingalone.application.user.cmd.UserChangePasswordCmd;
 import com.ty.hikingalone.application.user.cmd.UserLoginCmd;
 import com.ty.hikingalone.application.user.cmd.UserRegisterCmd;
@@ -18,11 +20,16 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final UserAccountRepository userAccountRepository;
+    private final EmailService emailService;
 
     /**
-     * 注册：先查唯一性（仓储），再交给实体工厂创建，最后落库
+     * 注册：先校验邮箱验证码，再查唯一性（仓储），最后交给实体工厂创建，落库
      */
     public UserAccount register(UserRegisterCmd cmd) {
+        // 邮箱验证码必须校验通过（证明邮箱归属），通过后验证码即被消费，防止重放
+        if (!emailService.verify(new VerifyCodeCmd(cmd.email(), cmd.code()))) {
+            throw new IllegalArgumentException("验证码错误或已过期");
+        }
         if (userAccountRepository.findByUsername(cmd.username()) != null) {
             throw new IllegalArgumentException("用户名已存在");
         }
@@ -46,9 +53,13 @@ public class UserService {
     }
 
     /**
-     * 修改密码：取账号后交给实体校验旧密码并更新，再落库
+     * 修改密码：先校验邮箱验证码（证明邮箱归属），再取账号校验旧密码并更新，落库
      */
     public void changePassword(UserChangePasswordCmd cmd) {
+        // 邮箱验证码必须校验通过（证明对邮箱的控制权），通过后验证码即被消费，防止重放
+        if (!emailService.verify(new VerifyCodeCmd(cmd.email(), cmd.code()))) {
+            throw new IllegalArgumentException("验证码错误或已过期");
+        }
         UserAccount account = userAccountRepository.findByEmail(cmd.email());
         if (account == null) {
             throw new IllegalArgumentException("账号不存在");

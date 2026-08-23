@@ -19,7 +19,10 @@ public class UserConverter {
 
     public UserRegisterCmd toRegisterCmd(UserCreateDTO userCreateDTO) {
         return new UserRegisterCmd(
-                userCreateDTO.getUsername(), userCreateDTO.getPassword(), userCreateDTO.getEmail());
+                userCreateDTO.getUsername(),
+                userCreateDTO.getPassword(),
+                userCreateDTO.getEmail(),
+                userCreateDTO.getCode());
     }
 
     public UserLoginCmd toLoginCmd(UserLoginDTO userLoginDTO) {
@@ -30,7 +33,8 @@ public class UserConverter {
         return new UserChangePasswordCmd(
                 userChangePasswordDTO.getEmail(),
                 userChangePasswordDTO.getOldPassword(),
-                userChangePasswordDTO.getNewPassword());
+                userChangePasswordDTO.getNewPassword(),
+                userChangePasswordDTO.getCode());
     }
 
     public UserCreateVO toUserCreateVO(UserAccount account) {
