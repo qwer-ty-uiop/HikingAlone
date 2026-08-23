@@ -140,6 +140,16 @@ journalctl -u hikingalone -f   # 看启动日志
 
 CI 用 scp 把 jar 传到 `/tmp/hikingalone/`、dist 传到 `/tmp/hikingalone-frontend/`，再通过 sudo 移动到目标目录。所以 `/tmp` 下无需额外权限，部署用户在服务器上需有 sudo 权限（`sudo mv` / `systemctl restart` 用到）。
 
+**Nginx 静态目录必须让 nginx 用户可读**：`sudo mv` 出来的文件属主是 root，而 nginx worker 以 `www-data` 运行。若目录或文件权限过紧（如 700/600），Nginx 读不到文件会直接返回 403。一次初始化即可，之后 CD 的 `mv` 不会改变属主：
+
+```bash
+sudo mkdir -p /var/www/hikingalone
+sudo chown -R www-data:www-data /var/www/hikingalone
+sudo chmod -R 755 /var/www/hikingalone
+```
+
+> 排查静态文件 403 时的命令：`ls -la /var/www/hikingalone/`（看属主）、`sudo -u www-data cat /var/www/hikingalone/index.html`（模拟 nginx 用户读文件）、`sudo tail -f /var/log/nginx/error.log`（403 会有 "Permission denied" 记录）。
+
 ## 二、GitHub Secrets 配置
 
 两个仓库各自 Settings → Secrets and variables → Actions → New repository secret：
