@@ -6,16 +6,15 @@ spring:
       enabled: false
   mail:
     host: smtp.qq.com
-    port: 587
+    port: 465
     username: 1962008499@qq.com
-    password:
+    password: ${MAIL_PASSWORD:}   # QQ 邮箱 SMTP 授权码（非登录密码），建议用环境变量注入
     properties:
       mail:
         smtp:
           auth: true
-          starttls:
-            enable: true
-            required: true
+          ssl:
+            enable: true          # 465 = 隐式 SSL（QQ 官方推荐）；587/STARTTLS 在部分云厂商被墙，故用 465
 
 
 register:

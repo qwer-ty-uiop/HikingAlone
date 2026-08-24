@@ -59,18 +59,18 @@ public class EmailService {
             return false;
         }
 
-        // 先写冷却标记（占位），再存验证码本体；过期时间各自独立
-        verificationCodeStore.markCooling(code, coolSeconds);
-        verificationCodeStore.saveCode(code, codeExpireSeconds);
-
-        // 发送邮件：from 必须与 SMTP 认证用户一致（spring.mail.username），
-        // 否则 QQ 服务器返回 501 拒绝发送；to 是用户填的接收邮箱
+        // 先发信、成功后再写 Redis：若发信失败（网络/认证），不残留冷却 key 和
+        // 未发出的验证码，用户可立即重试，不会被锁 60s
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(mailUsername);
         message.setTo(cmd.email());
         message.setSubject("Hiking Alone 验证码");
         message.setText("您的验证码是：" + code.getCode() + "，有效期 " + codeExpireSeconds / 60 + " 分钟，请勿泄露。");
         mailSender.send(message);
+
+        // 发信成功：写冷却标记（占位）与验证码本体；过期时间各自独立
+        verificationCodeStore.markCooling(code, coolSeconds);
+        verificationCodeStore.saveCode(code, codeExpireSeconds);
 
         log.info("验证码已发送至 {}，有效期 {}s", cmd.email(), codeExpireSeconds);
         return true;
