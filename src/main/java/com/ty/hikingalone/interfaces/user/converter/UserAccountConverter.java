@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
  * 用户模块接口层转换器：HTTP DTO → 应用层命令；领域实体 → 视图对象
  */
 @Component
-public class UserConverter {
+public class UserAccountConverter {
 
     public UserRegisterCmd toRegisterCmd(UserCreateDTO userCreateDTO) {
         return new UserRegisterCmd(

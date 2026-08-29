@@ -67,4 +67,11 @@ public class UserService {
         account.changePassword(cmd.oldPassword(), cmd.newPassword());
         userAccountRepository.update(account);
     }
+
+    /**
+     * 按 id 查询账号（会话校验接口 /user/me 使用：会话中 userId 一定存在对应账号）
+     */
+    public UserAccount getUserById(Long id) {
+        return userAccountRepository.findById(id);
+    }
 }

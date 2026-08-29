@@ -90,6 +90,24 @@ create table if not exists `training_record_daily` (
     unique key `uk_plan_item_date` (`plan_id`, `item_id`, `record_date`),
     KEY            `idx_user_date` (`user_id`, `record_date`)
 ) ENGINE=InnoDB default CHARSET=utf8mb4 collate=utf8mb4_0900_ai_ci;
+-- hiking_alone.route_track 定义（徒步路线轨迹：上传轨迹点，里程/时长/爬升由领域层计算，轨迹点 JSON 同表存储）
+
+create table if not exists `route_track` (
+    `id`             bigint       not null AUTO_INCREMENT,
+    `user_id`        bigint       default null COMMENT '所属用户',
+    `name`           varchar(100) default null COMMENT '路线名称',
+    `description`    varchar(500) default null COMMENT '路线描述',
+    `distance`       decimal(10,2) default null COMMENT '总里程（公里，按轨迹点 Haversine 计算）',
+    `duration_min`   int          default null COMMENT '总时长（分钟，轨迹点时间戳首尾差）',
+    `elevation_gain` decimal(10,1) default null COMMENT '累计爬升（米，相邻点高程正向差累加）',
+    `points_json`    mediumtext   default null COMMENT '轨迹点 JSON：[{"lng":..,"lat":..,"ele":..,"time":".."}]（MEDIUMTEXT 16MB，避免长轨迹超出 TEXT 65KB 上限）',
+    `waypoints_json` mediumtext   default null COMMENT '途径点/命名标注点 JSON：[{"lng":..,"lat":..,"ele":..,"name":".."}]，来自 GPX wpt / KML Point，可为空',
+    `create_time`    datetime     default null,
+    `update_time`    datetime     default null,
+    primary key (`id`),
+    KEY              `idx_user_id` (`user_id`)
+) ENGINE=InnoDB default CHARSET=utf8mb4 collate=utf8mb4_0900_ai_ci;
+
 -- hiking_alone.user 定义（用户账号：登录凭证；`user` 为 MySQL 保留字，必须加反引号）
 
 create table if not exists `user` (
