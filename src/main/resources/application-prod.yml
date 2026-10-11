@@ -69,6 +69,14 @@ springdoc:
       paths-to-match: '/**'
       packages-to-scan: com.ty.hikingalone.controller
 
+# ========== LLM（AI 装备建议） ==========
+# 未配置 LLM_API_KEY 时自动降级内置规则引擎；配置后写入 systemd 环境（/etc/systemd/system/hikingalone.service 的 Environment=）
+llm:
+  base-url: ${LLM_BASE_URL:https://api.deepseek.com}
+  api-key: ${LLM_API_KEY:}
+  model: ${LLM_MODEL:deepseek-chat}
+  timeout-seconds: 30
+
 # ========== 日志配置 ==========
 logging:
   level:
