@@ -22,7 +22,7 @@ DB_HOST="${5:-127.0.0.1}"
 # 密码走环境变量，不出现在进程列表
 export MYSQL_PWD="$DB_PASSWORD"
 
-run_sql() { mysql --host="$DB_HOST" -u"$DB_USER" "$DB_NAME" "$@"; }
+run_sql() { mysql --default-character-set=utf8mb4 --host="$DB_HOST" -u"$DB_USER" "$DB_NAME" "$@"; }
 
 # 1. 追踪表（独立于业务表，名字固定前缀下划线，ddl.sql 不建它）
 run_sql <<'SQL'
