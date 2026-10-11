@@ -2,9 +2,12 @@ package com.ty.hikingalone.application.gear;
 
 import com.ty.hikingalone.application.gear.cmd.GearIdCmd;
 import com.ty.hikingalone.application.gear.cmd.GearItemCmd;
+import com.ty.hikingalone.domain.gear.entity.GearCatalogItem;
 import com.ty.hikingalone.domain.gear.entity.GearItem;
+import com.ty.hikingalone.domain.gear.repository.GearCatalogRepository;
 import com.ty.hikingalone.domain.gear.repository.GearItemRepository;
 import com.ty.hikingalone.interfaces.gear.converter.GearConverter;
+import com.ty.hikingalone.interfaces.gear.vo.query.GearCatalogVO;
 import com.ty.hikingalone.interfaces.gear.vo.query.GearItemVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +25,7 @@ import java.util.List;
 public class GearItemService {
 
     private final GearItemRepository gearItemRepository;
+    private final GearCatalogRepository gearCatalogRepository;
     private final GearConverter converter;
 
     /**
@@ -61,6 +65,16 @@ public class GearItemService {
     public void delete(Long userId, GearIdCmd cmd) {
         requireOwnedItem(userId, cmd.getId());
         gearItemRepository.delete(cmd.getId());
+    }
+
+    /**
+     * 常用装备目录联想：keyword 可空（返回前 N 条浏览）；limit 钳制 [1, 20]，缺省 10
+     */
+    public List<GearCatalogVO> searchCatalog(String keyword, Integer limit) {
+        int l = limit == null ? 10 : Math.max(1, Math.min(20, limit));
+        return gearCatalogRepository.search(keyword, l).stream()
+                .map(GearCatalogVO::of)
+                .toList();
     }
 
     /**

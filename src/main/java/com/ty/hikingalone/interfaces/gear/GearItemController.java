@@ -7,6 +7,7 @@ import com.ty.hikingalone.interfaces.gear.converter.GearConverter;
 import com.ty.hikingalone.interfaces.gear.dto.command.GearIdDTO;
 import com.ty.hikingalone.interfaces.gear.dto.command.GearItemSaveDTO;
 import com.ty.hikingalone.interfaces.gear.dto.command.GearItemUpdateDTO;
+import com.ty.hikingalone.interfaces.gear.vo.query.GearCatalogVO;
 import com.ty.hikingalone.interfaces.gear.vo.query.GearItemVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -38,6 +40,15 @@ public class GearItemController {
     @GetMapping
     public Result<List<GearItemVO>> list() {
         return Result.success(gearItemService.list(LoginUserContext.getUserId()));
+    }
+
+    /**
+     * 常用装备目录联想（平台级共享数据）：keyword 可空，limit 缺省 10、钳制 1~20
+     */
+    @GetMapping("/catalog")
+    public Result<List<GearCatalogVO>> catalog(@RequestParam(required = false) String keyword,
+                                               @RequestParam(required = false) Integer limit) {
+        return Result.success(gearItemService.searchCatalog(keyword, limit));
     }
 
     /**

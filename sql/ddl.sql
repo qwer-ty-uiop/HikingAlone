@@ -274,3 +274,15 @@ create table if not exists `knowledge_note` (
     primary key (`id`),
     KEY           `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB default CHARSET=utf8mb4 collate=utf8mb4_0900_ai_ci;
+
+-- hiking_alone.gear_catalog 定义（常用装备目录：平台级共享只读数据，供前端联想，见 docs/interfaces/gear.md v1.2）
+
+create table if not exists `gear_catalog` (
+    `id`           bigint       not null AUTO_INCREMENT,
+    `name`         varchar(100) not null COMMENT '通用装备名（联想主键）',
+    `category`     tinyint      not null COMMENT '品类 1背包 2帐篷天幕 3睡袋防潮垫 4鞋袜 5服装 6炊具饮水 7照明 8导航 9安全急救 10电子设备 11其他',
+    `weight_grams` int          default null COMMENT '典型自重 克',
+    `sort`         int          default '0' COMMENT '排序',
+    primary key (`id`),
+    unique key `uk_name` (`name`)
+) ENGINE=InnoDB default CHARSET=utf8mb4 collate=utf8mb4_0900_ai_ci;
