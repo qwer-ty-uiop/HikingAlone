@@ -279,8 +279,9 @@ create table if not exists `knowledge_note` (
 
 create table if not exists `gear_catalog` (
     `id`           bigint       not null AUTO_INCREMENT,
-    `name`         varchar(100) not null COMMENT '通用装备名（联想主键）',
+    `name`         varchar(100) not null COMMENT '通用/型号装备名（联想主键）',
     `category`     tinyint      not null COMMENT '品类 1背包 2帐篷天幕 3睡袋防潮垫 4鞋袜 5服装 6炊具饮水 7照明 8导航 9安全急救 10电子设备 11其他',
+    `brand`        varchar(50)  default null COMMENT '品牌（型号级条目）',
     `weight_grams` int          default null COMMENT '典型自重 克',
     `sort`         int          default '0' COMMENT '排序',
     primary key (`id`),

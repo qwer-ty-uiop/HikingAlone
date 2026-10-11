@@ -33,11 +33,13 @@ public class GearCatalogRepositoryImpl implements GearCatalogRepository {
             return all.stream().limit(limit).toList();
         }
         String k = keyword.trim();
-        // 前缀命中优先（「冲锋」优先于「连帽冲锋衣」），同档按目录顺序
+        String kLower = k.toLowerCase();
+        // 匹配名称或品牌（大小写不敏感，「gregory」命中品牌列）；前缀命中优先，同档按目录顺序
         Comparator<GearCatalogItem> byPrefixFirst = Comparator.comparingInt(
-                item -> item.getName().startsWith(k) ? 0 : 1);
+                item -> item.getName().toLowerCase().startsWith(kLower) ? 0 : 1);
         return all.stream()
-                .filter(item -> item.getName().contains(k))
+                .filter(item -> item.getName().toLowerCase().contains(kLower)
+                        || (item.getBrand() != null && item.getBrand().toLowerCase().contains(kLower)))
                 .sorted(byPrefixFirst.thenComparing(GearCatalogItem::getSort)
                         .thenComparing(GearCatalogItem::getId))
                 .limit(limit)
@@ -46,6 +48,6 @@ public class GearCatalogRepositoryImpl implements GearCatalogRepository {
 
     private GearCatalogItem toEntity(GearCatalogPO po) {
         return GearCatalogItem.reconstruct(
-                po.getId(), po.getName(), po.getCategory(), po.getWeightGrams(), po.getSort());
+                po.getId(), po.getName(), po.getCategory(), po.getBrand(), po.getWeightGrams(), po.getSort());
     }
 }

@@ -23,6 +23,11 @@ public class GearCatalogPO {
     private Integer category;
 
     /**
+     * 品牌（型号级条目，可空）
+     */
+    private String brand;
+
+    /**
      * 典型自重 克（可空）
      */
     private Integer weightGrams;

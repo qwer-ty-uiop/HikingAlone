@@ -26,6 +26,11 @@ public class GearCatalogItem {
     private Integer category;
 
     /**
+     * 品牌（型号级条目，可空）
+     */
+    private String brand;
+
+    /**
      * 典型自重 克（可空）
      */
     private Integer weightGrams;
@@ -35,12 +40,13 @@ public class GearCatalogItem {
     /**
      * 仓储重建：从持久化层还原（目录数据只读，无业务行为）
      */
-    public static GearCatalogItem reconstruct(Long id, String name, Integer category,
+    public static GearCatalogItem reconstruct(Long id, String name, Integer category, String brand,
                                               Integer weightGrams, Integer sort) {
         GearCatalogItem item = new GearCatalogItem();
         item.id = id;
         item.name = name;
         item.category = category;
+        item.brand = brand;
         item.weightGrams = weightGrams;
         item.sort = sort;
         return item;

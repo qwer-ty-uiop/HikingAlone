@@ -17,6 +17,9 @@ public class GearCatalogVO {
     /** 品类 1~11 */
     private Integer category;
 
+    /** 品牌（型号级条目，可空） */
+    private String brand;
+
     /** 典型自重 克（可空） */
     private Integer weightGrams;
 
@@ -28,6 +31,7 @@ public class GearCatalogVO {
         vo.setId(item.getId());
         vo.setName(item.getName());
         vo.setCategory(item.getCategory());
+        vo.setBrand(item.getBrand());
         vo.setWeightGrams(item.getWeightGrams());
         return vo;
     }
