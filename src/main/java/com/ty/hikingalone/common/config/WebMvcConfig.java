@@ -8,7 +8,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * Web MVC 配置：注册登录拦截器。
- * <p>拦截 /train/**、/routes/**、/body/**、/user/me、/user/logout（需登录），放行 /user/register、/user/login、/user/forget 及首页。</p>
+ * <p>拦截全部业务模块（需登录），放行 /user/register、/user/login、/user/forget 及首页。</p>
  */
 @Configuration
 @RequiredArgsConstructor
@@ -19,7 +19,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(loginUserInterceptor)
-                .addPathPatterns("/train/**", "/routes/**", "/body/**", "/user/me", "/user/logout")
+                .addPathPatterns("/train/**", "/routes/**", "/body/**", "/journal/**",
+                        "/daily/**", "/gear/**", "/wish/**", "/goal/**",
+                        "/achievement/**", "/stats/**", "/knowledge/**",
+                        "/user/me", "/user/logout")
                 .excludePathPatterns(
                         "/user/register",
                         "/user/login",
