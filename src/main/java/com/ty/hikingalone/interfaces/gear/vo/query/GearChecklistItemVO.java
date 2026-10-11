@@ -24,4 +24,7 @@ public class GearChecklistItemVO {
 
     /** 排序 */
     private Integer sort;
+
+    /** 装载仓位 0随身 1顶袋 2背部中段 3上部 4包底（null=按品类推荐） */
+    private Integer slot;
 }

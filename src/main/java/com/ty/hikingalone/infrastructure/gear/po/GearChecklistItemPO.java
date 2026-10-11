@@ -44,5 +44,10 @@ public class GearChecklistItemPO {
      */
     private Integer sort;
 
+    /**
+     * 装载仓位 0~4（null=按品类推荐）
+     */
+    private Integer slot;
+
     private LocalDateTime createTime;
 }

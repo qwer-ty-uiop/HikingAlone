@@ -56,6 +56,11 @@ public class GearChecklistItem {
      */
     private Integer sort;
 
+    /**
+     * 装载仓位 0随身 1顶袋 2背部中段 3上部 4包底（null = 按品类推荐归位）
+     */
+    private Integer slot;
+
     private LocalDateTime createTime;
 
     /**
@@ -74,9 +79,12 @@ public class GearChecklistItem {
     }
 
     /**
-     * 部分更新：只覆盖非 null 字段（勾选/改名/改克重）
+     * 部分更新：只覆盖非 null 字段（勾选/改名/改克重/换仓位）
      */
-    public void merge(Integer checked, String name, Integer weightGrams) {
+    public void merge(Integer checked, String name, Integer weightGrams, Integer slot) {
+        if (slot != null && (slot < 0 || slot > 4)) {
+            throw new IllegalArgumentException("装载仓位不合法");
+        }
         if (checked != null) {
             if (checked != 0 && checked != 1) {
                 throw new IllegalArgumentException("打包状态只能是 0 或 1");
@@ -86,6 +94,9 @@ public class GearChecklistItem {
         if (name != null || weightGrams != null) {
             applyContent(name == null ? this.name : name,
                     weightGrams == null ? this.weightGrams : weightGrams);
+        }
+        if (slot != null) {
+            this.slot = slot;
         }
     }
 
@@ -111,7 +122,7 @@ public class GearChecklistItem {
      * 仓储重建：从持久化层还原（不做业务校验）
      */
     public static GearChecklistItem reconstruct(Long id, Long checklistId, Long gearItemId, String name,
-                                                Integer weightGrams, Integer checked, Integer sort,
+                                                Integer weightGrams, Integer checked, Integer sort, Integer slot,
                                                 LocalDateTime createTime) {
         GearChecklistItem item = new GearChecklistItem();
         item.id = id;
@@ -121,6 +132,7 @@ public class GearChecklistItem {
         item.weightGrams = weightGrams;
         item.checked = checked;
         item.sort = sort;
+        item.slot = slot;
         item.createTime = createTime;
         return item;
     }

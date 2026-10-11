@@ -104,11 +104,11 @@ public class GearChecklist {
     }
 
     /**
-     * 更新条目（部分覆盖：勾选/改名/改克重）；条目必须属于本清单
+     * 更新条目（部分覆盖：勾选/改名/改克重/换仓位）；条目必须属于本清单
      */
-    public void updateItem(Long itemId, Integer checked, String name, Integer weightGrams) {
+    public void updateItem(Long itemId, Integer checked, String name, Integer weightGrams, Integer slot) {
         GearChecklistItem item = requireItem(itemId);
-        item.merge(checked, name, weightGrams);
+        item.merge(checked, name, weightGrams, slot);
     }
 
     /**

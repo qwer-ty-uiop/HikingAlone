@@ -9,6 +9,7 @@ import com.ty.hikingalone.infrastructure.gear.mapper.GearChecklistMapper;
 import com.ty.hikingalone.infrastructure.gear.po.GearChecklistItemPO;
 import com.ty.hikingalone.infrastructure.gear.po.GearChecklistPO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 /**
  * 打包清单仓储实现：聚合读时整体装配（头 + 条目），写走细粒度方法
  */
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class GearChecklistRepositoryImpl implements GearChecklistRepository {
@@ -76,6 +78,7 @@ public class GearChecklistRepositoryImpl implements GearChecklistRepository {
 
     @Override
     public Long saveItem(GearChecklistItem item) {
+        log.info("saveItem id={} slot={} checked={}", item.getId(), item.getSlot(), item.getChecked());
         GearChecklistItemPO po = new GearChecklistItemPO();
         po.setChecklistId(item.getChecklistId());
         po.setGearItemId(item.getGearItemId());
@@ -83,6 +86,7 @@ public class GearChecklistRepositoryImpl implements GearChecklistRepository {
         po.setWeightGrams(item.getWeightGrams());
         po.setChecked(item.getChecked());
         po.setSort(item.getSort());
+        po.setSlot(item.getSlot());
         po.setCreateTime(item.getCreateTime());
         if (item.getId() != null) {
             po.setId(item.getId());
@@ -128,6 +132,6 @@ public class GearChecklistRepositoryImpl implements GearChecklistRepository {
     private GearChecklistItem toItemEntity(GearChecklistItemPO po) {
         return GearChecklistItem.reconstruct(
                 po.getId(), po.getChecklistId(), po.getGearItemId(), po.getName(),
-                po.getWeightGrams(), po.getChecked(), po.getSort(), po.getCreateTime());
+                po.getWeightGrams(), po.getChecked(), po.getSort(), po.getSlot(), po.getCreateTime());
     }
 }

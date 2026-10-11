@@ -86,6 +86,7 @@ public class GearConverter {
         cmd.setChecked(dto.getChecked());
         cmd.setName(dto.getName());
         cmd.setWeightGrams(dto.getWeightGrams());
+        cmd.setSlot(dto.getSlot());
         return cmd;
     }
 
@@ -133,6 +134,7 @@ public class GearConverter {
             vo.setWeightGrams(item.getWeightGrams());
             vo.setChecked(item.getChecked());
             vo.setSort(item.getSort());
+            vo.setSlot(item.getSlot());
             return vo;
         }).toList();
     }

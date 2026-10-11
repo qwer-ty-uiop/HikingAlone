@@ -67,11 +67,14 @@ public class GearItemService {
         gearItemRepository.delete(cmd.getId());
     }
 
+    /** 目录全量上限（平台目录量级 ~数百条，联想前端本地过滤需要全量） */
+    private static final int CATALOG_MAX_LIMIT = 500;
+
     /**
-     * 常用装备目录联想：keyword 可空（返回前 N 条浏览）；limit 钳制 [1, 20]，缺省 10
+     * 常用装备目录：keyword 可空；limit 缺省/钳制 [1, 500]——前端开弹窗拉全量后本地过滤
      */
     public List<GearCatalogVO> searchCatalog(String keyword, Integer limit) {
-        int l = limit == null ? 10 : Math.max(1, Math.min(20, limit));
+        int l = limit == null ? CATALOG_MAX_LIMIT : Math.max(1, Math.min(CATALOG_MAX_LIMIT, limit));
         return gearCatalogRepository.search(keyword, l).stream()
                 .map(GearCatalogVO::of)
                 .toList();

@@ -29,4 +29,9 @@ public class ChecklistItemUpdateDTO {
      * 克重快照（可空=不更新）
      */
     private Integer weightGrams;
+
+    /**
+     * 装载仓位 0~4（可空=不更新；装包拼图自由换位）
+     */
+    private Integer slot;
 }

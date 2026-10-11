@@ -28,6 +28,11 @@ public class GearCatalogPO {
     private String brand;
 
     /**
+     * 联想别名（可空）
+     */
+    private String searchTerms;
+
+    /**
      * 典型自重 克（可空）
      */
     private Integer weightGrams;

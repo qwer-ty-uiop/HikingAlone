@@ -31,6 +31,11 @@ public class GearCatalogItem {
     private String brand;
 
     /**
+     * 联想别名（中文品牌名/拼音/型号缩写，空格分隔，可空）
+     */
+    private String searchTerms;
+
+    /**
      * 典型自重 克（可空）
      */
     private Integer weightGrams;
@@ -41,12 +46,13 @@ public class GearCatalogItem {
      * 仓储重建：从持久化层还原（目录数据只读，无业务行为）
      */
     public static GearCatalogItem reconstruct(Long id, String name, Integer category, String brand,
-                                              Integer weightGrams, Integer sort) {
+                                              String searchTerms, Integer weightGrams, Integer sort) {
         GearCatalogItem item = new GearCatalogItem();
         item.id = id;
         item.name = name;
         item.category = category;
         item.brand = brand;
+        item.searchTerms = searchTerms;
         item.weightGrams = weightGrams;
         item.sort = sort;
         return item;

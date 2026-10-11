@@ -32,22 +32,28 @@ public class GearCatalogRepositoryImpl implements GearCatalogRepository {
         if (keyword == null || keyword.isBlank()) {
             return all.stream().limit(limit).toList();
         }
-        String k = keyword.trim();
-        String kLower = k.toLowerCase();
-        // 匹配名称或品牌（大小写不敏感，「gregory」命中品牌列）；前缀命中优先，同档按目录顺序
+        // 归一化匹配：去所有空白 + 小写（「格里高利B65」=「格里高利 B65」，名称/品牌/中文别名都命中）
+        String k = normalize(keyword.trim());
         Comparator<GearCatalogItem> byPrefixFirst = Comparator.comparingInt(
-                item -> item.getName().toLowerCase().startsWith(kLower) ? 0 : 1);
+                item -> normalize(item.getName()).startsWith(k) ? 0 : 1);
         return all.stream()
-                .filter(item -> item.getName().toLowerCase().contains(kLower)
-                        || (item.getBrand() != null && item.getBrand().toLowerCase().contains(kLower)))
+                .filter(item -> normalize(item.getName()).contains(k)
+                        || (item.getBrand() != null && normalize(item.getBrand()).contains(k))
+                        || (item.getSearchTerms() != null && normalize(item.getSearchTerms()).contains(k)))
                 .sorted(byPrefixFirst.thenComparing(GearCatalogItem::getSort)
                         .thenComparing(GearCatalogItem::getId))
                 .limit(limit)
                 .toList();
     }
 
+    /** 归一化：去所有空白 + 小写（中文输入习惯性不加空格，数据库里带空格） */
+    private String normalize(String s) {
+        return s == null ? "" : s.replaceAll("\\s+", "").toLowerCase();
+    }
+
     private GearCatalogItem toEntity(GearCatalogPO po) {
         return GearCatalogItem.reconstruct(
-                po.getId(), po.getName(), po.getCategory(), po.getBrand(), po.getWeightGrams(), po.getSort());
+                po.getId(), po.getName(), po.getCategory(), po.getBrand(), po.getSearchTerms(),
+                po.getWeightGrams(), po.getSort());
     }
 }

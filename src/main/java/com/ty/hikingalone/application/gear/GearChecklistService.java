@@ -6,6 +6,7 @@ import com.ty.hikingalone.application.gear.cmd.GearChecklistCmd;
 import com.ty.hikingalone.application.gear.cmd.GearIdCmd;
 import com.ty.hikingalone.domain.gear.entity.GearChecklist;
 import com.ty.hikingalone.domain.gear.entity.GearChecklistItem;
+import com.ty.hikingalone.domain.gear.entity.GearChecklistItem;
 import com.ty.hikingalone.domain.gear.repository.GearChecklistRepository;
 import com.ty.hikingalone.interfaces.gear.converter.GearConverter;
 import com.ty.hikingalone.interfaces.gear.vo.query.GearChecklistVO;
@@ -99,13 +100,15 @@ public class GearChecklistService {
     }
 
     /**
-     * 更新条目（勾选/改名/改克重，非 null 覆盖）
+     * 更新条目（勾选/改名/改克重/换仓位，非 null 覆盖）
      */
     @Transactional
     public GearChecklistVO updateItem(Long userId, ChecklistItemUpdateCmd cmd) {
+        log.info("updateItem in: id={} checked={} name={} weight={} slot={}", cmd.getId(), cmd.getChecked(), cmd.getName(), cmd.getWeightGrams(), cmd.getSlot());
         Long checklistId = findChecklistIdByItem(userId, cmd.getId());
         GearChecklist checklist = requireOwnedChecklist(userId, checklistId);
-        checklist.updateItem(cmd.getId(), cmd.getChecked(), cmd.getName(), cmd.getWeightGrams());
+        checklist.updateItem(cmd.getId(), cmd.getChecked(), cmd.getName(), cmd.getWeightGrams(), cmd.getSlot());
+        log.info("updateItem merged: slot={}", checklist.getItems().stream().filter(i -> i.getId().equals(cmd.getId())).findFirst().map(GearChecklistItem::getSlot).orElse(null));
         checklist.getItems().stream()
                 .filter(i -> i.getId().equals(cmd.getId()))
                 .findFirst()
