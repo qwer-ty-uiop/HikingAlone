@@ -22,6 +22,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addPathPatterns("/train/**", "/routes/**", "/body/**", "/journal/**",
                         "/daily/**", "/gear/**", "/wish/**", "/goal/**",
                         "/achievement/**", "/stats/**", "/knowledge/**",
+                        "/profile/**",
                         "/user/me", "/user/logout")
                 .excludePathPatterns(
                         "/user/register",
