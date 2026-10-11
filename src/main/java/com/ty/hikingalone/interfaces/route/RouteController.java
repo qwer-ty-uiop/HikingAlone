@@ -1,11 +1,13 @@
 package com.ty.hikingalone.interfaces.route;
 
+import com.ty.hikingalone.application.route.RouteHotService;
 import com.ty.hikingalone.application.route.RouteService;
 import com.ty.hikingalone.application.route.cmd.RouteCreateCmd;
 import com.ty.hikingalone.common.context.LoginUserContext;
 import com.ty.hikingalone.common.result.Result;
 import com.ty.hikingalone.interfaces.route.converter.RouteConverter;
 import com.ty.hikingalone.interfaces.route.dto.command.RouteCreateDTO;
+import com.ty.hikingalone.interfaces.route.vo.query.RouteHotVO;
 import com.ty.hikingalone.interfaces.route.vo.query.RouteTrackDetailVO;
 import com.ty.hikingalone.interfaces.route.vo.query.RouteTrackVO;
 import jakarta.validation.Valid;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -32,6 +35,7 @@ import java.util.List;
 public class RouteController {
 
     private final RouteService routeService;
+    private final RouteHotService routeHotService;
     private final RouteConverter routeConverter;
 
     /**
@@ -49,6 +53,14 @@ public class RouteController {
     @GetMapping
     public Result<List<RouteTrackVO>> listRoutes() {
         return Result.success(routeService.listRoutes(LoginUserContext.getUserId()));
+    }
+
+    /**
+     * 常走路线 Top N（按徒步日记引用次数聚合；字面量路径优先于 /{id} 匹配）
+     */
+    @GetMapping("/hot")
+    public Result<List<RouteHotVO>> hotRoutes(@RequestParam(required = false) Integer limit) {
+        return Result.success(routeHotService.hot(LoginUserContext.getUserId(), limit));
     }
 
     /**

@@ -3,10 +3,12 @@ package com.ty.hikingalone.interfaces.route.converter;
 import com.ty.hikingalone.application.route.cmd.RouteCreateCmd;
 import com.ty.hikingalone.domain.route.entity.RouteTrack;
 import com.ty.hikingalone.interfaces.route.dto.command.RouteCreateDTO;
+import com.ty.hikingalone.interfaces.route.vo.query.RouteHotVO;
 import com.ty.hikingalone.interfaces.route.vo.query.RouteTrackDetailVO;
 import com.ty.hikingalone.interfaces.route.vo.query.RouteTrackVO;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -87,5 +89,21 @@ public class RouteConverter {
         waypointVO.setEle(waypoint.ele());
         waypointVO.setName(waypoint.name());
         return waypointVO;
+    }
+
+    /**
+     * 路线 + 常走统计 → 热 VO（GET /routes/hot）
+     */
+    public RouteHotVO toHotVO(RouteTrack route, int hikeCount, LocalDate lastHikeDate, LocalDate firstHikeDate) {
+        RouteHotVO vo = new RouteHotVO();
+        vo.setRouteId(route.getId());
+        vo.setName(route.getName());
+        vo.setDistanceKm(route.getDistance());
+        vo.setDurationMin(route.getDurationMin());
+        vo.setElevationGain(route.getElevationGain());
+        vo.setHikeCount(hikeCount);
+        vo.setLastHikeDate(lastHikeDate == null ? null : lastHikeDate.toString());
+        vo.setFirstHikeDate(firstHikeDate == null ? null : firstHikeDate.toString());
+        return vo;
     }
 }
