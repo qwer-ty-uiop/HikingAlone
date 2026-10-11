@@ -40,6 +40,14 @@ jobs:
           mysql --host=127.0.0.1 --user=root --password=root hiking_alone < sql/ddl.sql
           mysql --host=127.0.0.1 --user=root --password=root hiking_alone < sql/data.sql
 
+      # 迁移门禁：在全新库上把增量迁移跑一遍，脚本有问题直接挡在构建阶段
+      - name: Validate migrations
+        run: |
+          chmod +x sql/migrations/migrate.sh
+          bash sql/migrations/migrate.sh root root hiking_alone "$GITHUB_WORKSPACE/sql/migrations"
+          # 幂等自检：重复执行应全部 skip 且退出码为 0
+          bash sql/migrations/migrate.sh root root hiking_alone "$GITHUB_WORKSPACE/sql/migrations"
+
       # SpringBootTest 启动完整上下文需要真实数据库；-D 命令行参数优先级高于 application-dev.yml
       - name: Build and test
         run: |
@@ -91,7 +99,19 @@ jobs:
           # 同上：去掉 sql/ 层，文件直接落在 /tmp/hikingalone/ddl.sql
           strip_components: 1
 
-      - name: Apply database schema
+      # 增量迁移脚本（sql/migrations/**：*.sql + migrate.sh + README.md）
+      # strip_components: 2 去掉 sql/migrations/ 两层，内容直接落在 /tmp/hikingalone-migrations/ 根
+      - name: Upload migrations
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: "sql/migrations/**"
+          target: "/tmp/hikingalone-migrations/"
+          strip_components: 2
+
+      - name: Apply schema and migrations
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -101,7 +121,15 @@ jobs:
             set -e
             ls -la /tmp/hikingalone/
             test -f /tmp/hikingalone/ddl.sql || { echo "ddl.sql not uploaded"; exit 1; }
+            ls -la /tmp/hikingalone-migrations/
+            test -f /tmp/hikingalone-migrations/migrate.sh || { echo "migrate.sh not uploaded"; exit 1; }
+            # 1) 全量 DDL 先行（幂等，负责新库建表；对已有表无副作用）
             mysql -uroot -proot hiking_alone < /tmp/hikingalone/ddl.sql
+            # 2) 增量迁移常驻服务器目录（保留历史，支持应急手动执行）
+            sudo mkdir -p /opt/hikingalone/migrations
+            sudo cp /tmp/hikingalone-migrations/*.sql /tmp/hikingalone-migrations/migrate.sh /opt/hikingalone/migrations/
+            # 3) 执行 pending 迁移（_migration_history 判重，失败即红且下次自动重试）
+            bash /opt/hikingalone/migrations/migrate.sh root root hiking_alone /opt/hikingalone/migrations
 
       - name: Deploy and restart
         uses: appleboy/ssh-action@v1.2.0

@@ -196,3 +196,13 @@ mysql -uroot -proot hiking_alone -e "show tables;"
 # 6. 前端目录是否有内容（曾因 CD 路径 bug 被清空过）
 ls /var/www/hikingalone/
 ```
+
+## 数据库结构变更（2026-10-11 起）
+
+- `sql/ddl.sql`：全量建表（`create table if not exists`），只负责**新表**，CD 每次部署都会执行
+- `sql/migrations/`：**增量迁移**（ALTER TABLE / 数据订正），CD 自动执行，无需手动上服务器：
+  - 构建阶段先在 CI 的全新 MySQL 上跑一遍 `migrate.sh` 做门禁
+  - 部署阶段上传到 `/opt/hikingalone/migrations/` 并执行，`_migration_history` 表按文件名判重，每个文件只跑一次
+  - 失败即部署变红，文件不记录，下次部署自动重试
+- 命名与可重入约定见 `sql/migrations/README.md`；应急手动执行：
+  `bash /opt/hikingalone/migrations/migrate.sh root <password> hiking_alone /opt/hikingalone/migrations`
