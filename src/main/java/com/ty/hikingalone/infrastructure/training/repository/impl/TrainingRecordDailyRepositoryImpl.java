@@ -92,6 +92,16 @@ public class TrainingRecordDailyRepositoryImpl implements TrainingRecordDailyRep
         }
     }
 
+    @Override
+    public long sumCommitCount(Long userId) {
+        return dailyMapper.selectList(
+                new LambdaQueryWrapper<TrainingRecordDailyPO>()
+                        .eq(TrainingRecordDailyPO::getUserId, userId)
+        ).stream()
+                .mapToLong(po -> po.getCommitCount() == null ? 0L : po.getCommitCount())
+                .sum();
+    }
+
     private TrainingRecordDaily toEntity(TrainingRecordDailyPO po) {
         return TrainingRecordDaily.reconstruct(
                 po.getId(), po.getPlanId(), po.getItemId(), po.getUserId(), po.getRecordDate(),

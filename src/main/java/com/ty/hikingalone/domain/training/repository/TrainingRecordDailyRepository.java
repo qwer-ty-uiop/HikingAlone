@@ -46,4 +46,9 @@ public interface TrainingRecordDailyRepository {
      * 保存汇总行：有 id 走更新，无 id 走插入
      */
     void save(TrainingRecordDaily daily);
+
+    /**
+     * 某用户训练打卡总次数（commit_count 全量求和；成就徽章等跨模块只读聚合使用）
+     */
+    long sumCommitCount(Long userId);
 }
