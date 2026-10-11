@@ -121,3 +121,18 @@ create table if not exists `user` (
     unique key `uk_username` (`username`),
     unique key `uk_email` (`email`)
 ) ENGINE=InnoDB default CHARSET=utf8mb4 collate=utf8mb4_0900_ai_ci;
+
+-- hiking_alone.body_metric 定义（身体数据模块，见 docs/interfaces/body.md）
+
+create table if not exists `body_metric` (
+    `id`                 bigint       not null AUTO_INCREMENT,
+    `user_id`            bigint       not null COMMENT '所属用户',
+    `record_date`        date         not null COMMENT '记录日期（每用户每天一条，同日重复提交覆盖更新）',
+    `weight_kg`          decimal(5,1) not null COMMENT '体重 kg（25.0~250.0）',
+    `resting_heart_rate` int          default null COMMENT '晨起静息心率 次/分（30~220，可空）',
+    `note`               varchar(200) default null COMMENT '备注（睡眠/疲劳/状态等，≤200字）',
+    `create_time`        datetime     default null COMMENT '首次记录时间',
+    `update_time`        datetime     default null COMMENT '最近修改时间',
+    primary key (`id`),
+    unique key `uk_user_date` (`user_id`, `record_date`)
+) ENGINE=InnoDB default CHARSET=utf8mb4 collate=utf8mb4_0900_ai_ci;
