@@ -34,14 +34,19 @@ public class RedisSendRateLimiter implements SendRateLimiter {
     @Override
     public boolean tryAcquire(String ip) {
         String key = KEY_PREFIX + ip;
-        Long count = redisTemplate.opsForValue().increment(key);
-        if (count == null) {
-            // Redis 异常时放行：验证码还有单邮箱 60s 冷却兜底，限流器故障不应阻断正常用户
+        try {
+            Long count = redisTemplate.opsForValue().increment(key);
+            if (count == null) {
+                return true;
+            }
+            if (count == 1) {
+                redisTemplate.expire(key, Duration.ofSeconds(windowSeconds));
+            }
+            return count <= ipLimit;
+        } catch (RuntimeException e) {
+            // Redis 故障时放行（fail-open）：验证码还有单邮箱 60s 冷却兜底，
+            // 限流器自身故障不应把正常用户挡成 500（连接异常等会以非受检异常抛出）
             return true;
         }
-        if (count == 1) {
-            redisTemplate.expire(key, Duration.ofSeconds(windowSeconds));
-        }
-        return count <= ipLimit;
     }
 }
