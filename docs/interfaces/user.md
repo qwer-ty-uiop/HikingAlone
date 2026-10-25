@@ -24,7 +24,7 @@
 ## 会话机制
 
 - 登录接口 `POST /user/login` 成功后：`request.getSession().setAttribute("loginUserId", account.id)`，并下发 `JSESSIONID` Cookie。
-- 需要登录的接口（`/train/**`、`/user/logout`）由 `LoginUserInterceptor` 拦截：会话无 `loginUserId` 时返回 `Result.error(401, "未登录")`。
+- 需要登录的接口（全部业务模块 `/train/**`、`/routes/**`、`/body/**`、`/journal/**`、`/daily/**`、`/gear/**`、`/wish/**`、`/goal/**`、`/achievement/**`、`/stats/**`、`/knowledge/**`、`/profile/**` 及 `/user/me`、`/user/logout`；放行 `/user/register|login|forget` 与公开的 `/home`、`/email`）由 `LoginUserInterceptor` 拦截：会话无 `loginUserId` 时返回 HTTP 401 + `Result.error(401, "未授权，请先登录")`。
 - 登出 `POST /user/logout` 使会话失效（`session.invalidate()`）。
 - 前端 `fetch` 需携带 Cookie（`credentials: 'include'` 或同源默认携带）。
 
@@ -97,6 +97,23 @@
 
 ```json
 { "code": 200, "message": "操作成功", "data": null, "timestamp": 1755331200000 }
+```
+
+### 5. GET /user/me —— 当前登录用户（需登录，2026-10-25 补记）
+
+无请求参数。**会话校验接口**：前端页面加载时调用，校准本地登录态与服务端会话是否一致，杜绝会话失效后仍显示已登录。
+
+- 由 `LoginUserInterceptor` 拦截：未登录返回 HTTP 401（前端据此跳登录页）
+- 已登录：从会话上下文取 userId 查账号，仅返回邮箱（不返回密码等敏感字段）
+
+响应 `data`：
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| email | string | 登录账号邮箱 |
+
+```json
+{ "code": 200, "message": "操作成功", "data": { "email": "hiker@example.com" }, "timestamp": 1755331200000 }
 ```
 
 ## 待办
