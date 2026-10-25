@@ -35,6 +35,10 @@ server:
   port: 8080
   servlet:
     context-path: /
+    # 会话不活动 30 分钟过期（Tomcat 默认值，显式声明成文档）：过期后受保护接口由
+    # LoginUserInterceptor 统一返回 401，前端 request.ts 跳 /login?expired=1 并提示重新登录
+    session:
+      timeout: 30m
     encoding:
       charset: UTF-8
       enabled: true
