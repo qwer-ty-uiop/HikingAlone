@@ -4,6 +4,7 @@ import com.ty.hikingalone.application.email.cmd.GetCodeCmd;
 import com.ty.hikingalone.application.email.cmd.VerifyCodeCmd;
 import com.ty.hikingalone.domain.email.entity.VerificationCode;
 import com.ty.hikingalone.domain.email.repository.VerificationCodeStore;
+import com.ty.hikingalone.domain.email.service.SendRateLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +26,7 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
     private final VerificationCodeStore verificationCodeStore;
+    private final SendRateLimiter sendRateLimiter;
 
     /** 验证码有效期（秒），application.yml register.code.expire */
     @Value("${register.code.expire:300}")
@@ -51,6 +53,11 @@ public class EmailService {
      * @return true=已发送；false=冷却中，未发送
      */
     public boolean sendCode(GetCodeCmd cmd) {
+        // IP 维度配额防刷：逐个换邮箱绕过单邮箱冷却的路径在此封住（超限 → 400）
+        if (!sendRateLimiter.tryAcquire(cmd.ip())) {
+            throw new IllegalArgumentException("发送过于频繁，请稍后再试");
+        }
+
         VerificationCode code = VerificationCode.getCode(cmd.email());
 
         // 冷却标记存在 → 冷却中，不再发送

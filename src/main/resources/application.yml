@@ -21,6 +21,8 @@ register:
   code:
     expire: 300 # 验证码有效期 300s
     cool: 60    # 同一邮箱发送冷却 60s（防刷）
+    ip-limit: 10          # 单 IP 每窗口最多发送 10 次（防逐个换邮箱刷接口）
+    ip-window-seconds: 3600 # 计数窗口 1h
 
 # ========== LLM（AI 装备建议，OpenAI 兼容协议：DeepSeek/通义千问/智谱/自建 vLLM 均可） ==========
 # api-key 未配置时 AI 建议自动降级为内置规则引擎，功能可用但无个性化

@@ -13,11 +13,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class EmailConverter {
 
-    public GetCodeCmd toSendEmailCmd(EmailDTO emailDTO) {
+    public GetCodeCmd toSendEmailCmd(EmailDTO emailDTO, String clientIp) {
         if (emailDTO == null) {
             return null;
         }
-        return new GetCodeCmd(emailDTO.getEmail());
+        return new GetCodeCmd(emailDTO.getEmail(), clientIp);
     }
 
     public VerifyCodeCmd toVerifyCodeCmd(EmailVerifyDTO emailVerifyDTO) {

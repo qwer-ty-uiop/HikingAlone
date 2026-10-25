@@ -30,7 +30,7 @@ class UserServiceTest {
 
     /** 邮箱验证码直接放行（注册/改密流程前置校验，与密码哈希无关） */
     private EmailService stubEmailService() {
-        return new EmailService(null, null) {
+        return new EmailService(null, null, null) {
             @Override
             public boolean verify(VerifyCodeCmd cmd) {
                 return true;
