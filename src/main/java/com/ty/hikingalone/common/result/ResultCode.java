@@ -16,6 +16,7 @@ public enum ResultCode {
     UNAUTHORIZED(401, "未授权，请先登录"),
     FORBIDDEN(403, "无权限访问"),
     NOT_FOUND(404, "资源不存在"),
+    METHOD_NOT_ALLOWED(405, "请求方法不支持"),
 
     // 业务状态码
     USER_NOT_FOUND(1001, "用户不存在"),

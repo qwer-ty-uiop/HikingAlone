@@ -11,6 +11,7 @@
 - 密码**明文存储**（学习项目，未做哈希）；生产前需改为 BCrypt
 - 登录成功后在 `HttpSession` 写入 `loginUserId`，后续请求携带会话 Cookie（`JSESSIONID`）即视为已登录
 - 所有响应统一 `Result<T>` 格式；错误经 `GlobalExceptionHandler` 统一返回中文 message
+- 错误响应 HTTP 状态码与 body `code` 一致：400 参数/校验错误、401 未登录、404 接口不存在、405 方法不支持、500 未预期异常（前端按 body code 处理，HTTP 码供监控/排障）
 
 ## 数据模型
 
