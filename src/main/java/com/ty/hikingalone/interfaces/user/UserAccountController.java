@@ -4,6 +4,7 @@ import com.ty.hikingalone.application.user.UserService;
 import com.ty.hikingalone.common.context.LoginUserContext;
 import com.ty.hikingalone.common.interceptor.LoginUserInterceptor;
 import com.ty.hikingalone.common.result.Result;
+import com.ty.hikingalone.common.session.UserSessionRegistry;
 import com.ty.hikingalone.domain.user.entity.UserAccount;
 import com.ty.hikingalone.interfaces.user.converter.UserAccountConverter;
 import com.ty.hikingalone.interfaces.user.dto.command.UserChangePasswordDTO;
@@ -26,6 +27,7 @@ public class UserAccountController {
 
     private final UserService userService;
     private final UserAccountConverter converter;
+    private final UserSessionRegistry userSessionRegistry;
 
     @PostMapping("/register")
     public Result<UserCreateVO> register(@Valid @RequestBody UserCreateDTO userCreateDTO) {
@@ -37,9 +39,11 @@ public class UserAccountController {
     public Result<UserLoginVO> login(@Valid @RequestBody UserLoginDTO userLoginDTO,
                                      HttpServletRequest request) {
         UserAccount account = userService.login(converter.toLoginCmd(userLoginDTO));
-        // 登录成功：建立服务端会话，供 /train 等需登录接口从会话取当前用户
+        // 登录成功：建立服务端会话，供 /train 等需登录接口从会话取当前用户；
+        // 同账号单活跃会话：新登录踢掉旧端（旧端下次请求 401，走「登录已过期」链路）
         HttpSession session = request.getSession(true);
         session.setAttribute(LoginUserInterceptor.SESSION_LOGIN_USER_ID, account.getId());
+        userSessionRegistry.activate(account.getId(), session);
         return Result.success(converter.toUserLoginVO(account));
     }
 
@@ -64,6 +68,11 @@ public class UserAccountController {
     public Result<Void> logout(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session != null) {
+            // 只清理仍归属本会话的登记；已被新登录踢掉的一端登出时不得误删新端的登记
+            Object userId = session.getAttribute(LoginUserInterceptor.SESSION_LOGIN_USER_ID);
+            if (userId instanceof Long id) {
+                userSessionRegistry.deactivate(id, session);
+            }
             session.invalidate();
         }
         return Result.success();
