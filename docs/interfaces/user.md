@@ -28,6 +28,7 @@
 - 需要登录的接口（全部业务模块 `/train/**`、`/routes/**`、`/body/**`、`/journal/**`、`/daily/**`、`/gear/**`、`/wish/**`、`/goal/**`、`/achievement/**`、`/stats/**`、`/knowledge/**`、`/profile/**` 及 `/user/me`、`/user/logout`；放行 `/user/register|login|forget` 与公开的 `/home`、`/email`）由 `LoginUserInterceptor` 拦截：会话无 `loginUserId` 时返回 HTTP 401 + `Result.error(401, "未授权，请先登录")`。
 - 登出 `POST /user/logout` 使会话失效（`session.invalidate()`）。
 - **会话超时**：`server.servlet.session.timeout: 30m`（application.yml，显式声明的 Tomcat 默认值）——不活动 30 分钟后 HttpSession 过期，受保护接口由拦截器统一返回 HTTP 401；前端 request.ts 收到 401 记录回跳页并跳 `/login?expired=1`，登录页展示「登录已过期，请重新登录」提示（URL 参数读取一次后清除，刷新不重复提示）。
+- **remember-me（2026-10-25）**：登录成功签发持久登录令牌——`HttpOnly + SameSite=Lax` Cookie `hikingalone.remember`（不加 Secure，生产当前为 HTTP），服务端 Redis 双 key（`auth:remember:token:<token>`→userId / `auth:remember:user:<userId>`→token）30 天滑动过期，resolve 命中即续期。会话过期/浏览器重开后，拦截器凭有效令牌自动重建会话（按单活跃会话登记，与正常登录等价）；**每用户单令牌**——新登录替换旧令牌，被踢端不能凭旧令牌复活（防互踢乒乓）。登出同时作废令牌并过期 Cookie。
 - **并发登录控制（单活跃会话互踢，2026-10-25）**：`UserSessionRegistry`（common/session，进程内 ConcurrentHashMap 维护 userId → 活跃 HttpSession）——同账号新登录使旧会话立即失效，旧端下一次请求 401，走与超时一致的「登录已过期」跳转链路；同一会话重复登录不自我失效；已被踢的一端登出不会误删新端的登记（compare-and-remove）。单机部署与 Tomcat 内存会话同生命周期（重启同时清空）。
 - 前端 `fetch` 需携带 Cookie（`credentials: 'include'` 或同源默认携带）。
 
@@ -124,4 +125,4 @@
 - ~~密码明文存储：生产前改 BCrypt 哈希~~ 已完成（2026-10-25，含存量明文透明升级）
 - ~~会话超时~~ 已完成（2026-10-25：30 分钟不活动过期 + 401 跳登录带过期提示）
 - ~~并发登录控制（同账号多端互踢）~~ 已完成（2026-10-25：单活跃会话，新登录踢旧端，见会话机制节）
-- remember-me（关闭浏览器后保持登录）暂未实现
+- ~~remember-me（关闭浏览器后保持登录）~~ 已完成（2026-10-25：持久令牌 Cookie + Redis 校验 + 会话自动重建，见会话机制节）
