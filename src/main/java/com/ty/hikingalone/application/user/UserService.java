@@ -7,6 +7,7 @@ import com.ty.hikingalone.application.user.cmd.UserLoginCmd;
 import com.ty.hikingalone.application.user.cmd.UserRegisterCmd;
 import com.ty.hikingalone.domain.user.entity.UserAccount;
 import com.ty.hikingalone.domain.user.repository.UserAccountRepository;
+import com.ty.hikingalone.domain.user.service.PasswordHasher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ public class UserService {
 
     private final UserAccountRepository userAccountRepository;
     private final EmailService emailService;
+    private final PasswordHasher passwordHasher;
 
     /**
      * 注册：先校验邮箱验证码，再查唯一性（仓储），最后交给实体工厂创建，落库
@@ -36,18 +38,24 @@ public class UserService {
         if (cmd.email() != null && userAccountRepository.findByEmail(cmd.email()) != null) {
             throw new IllegalArgumentException("邮箱已被注册");
         }
-        UserAccount account = UserAccount.register(cmd.username(), cmd.password(), cmd.email());
+        UserAccount account = UserAccount.register(cmd.username(), cmd.password(), cmd.email(), passwordHasher);
         userAccountRepository.save(account);
         return account;
     }
 
     /**
-     * 登录：按邮箱取账号，密码校验交给实体；统一错误提示避免泄露账号是否存在
+     * 登录：按邮箱取账号，密码校验交给实体；统一错误提示避免泄露账号是否存在。
+     * 存量明文密码在首次比对成功后透明升级为 BCrypt 哈希并落库（免停机迁移）。
      */
     public UserAccount login(UserLoginCmd cmd) {
         UserAccount account = userAccountRepository.findByEmail(cmd.email());
-        if (account == null || !account.verifyPassword(cmd.password())) {
+        if (account == null || !account.verifyPassword(cmd.password(), passwordHasher)) {
             throw new IllegalArgumentException("邮箱或密码错误");
+        }
+        if (account.hasLegacyPassword(passwordHasher)) {
+            account.applyPasswordHash(cmd.password(), passwordHasher);
+            userAccountRepository.update(account);
+            log.info("存量明文密码已透明升级为 BCrypt: {}", cmd.email());
         }
         return account;
     }
@@ -64,7 +72,7 @@ public class UserService {
         if (account == null) {
             throw new IllegalArgumentException("账号不存在");
         }
-        account.changePassword(cmd.oldPassword(), cmd.newPassword());
+        account.changePassword(cmd.oldPassword(), cmd.newPassword(), passwordHasher);
         userAccountRepository.update(account);
     }
 

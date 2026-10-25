@@ -113,7 +113,7 @@ create table if not exists `route_track` (
 create table if not exists `user` (
     `id`          bigint not null AUTO_INCREMENT,
     `username`    varchar(100)  default null COMMENT '用户名（唯一）',
-    `password`    varchar(255)  default null COMMENT '密码（当前明文，生产前改 BCrypt）',
+    `password`    varchar(255)  default null COMMENT '密码（BCrypt 哈希，$2a$10$… 60 字符；存量明文登录时透明升级）',
     `email`       varchar(255)  default null COMMENT '邮箱（登录账号，唯一）',
     `create_time` datetime      default null,
     `update_time` datetime      default null,
