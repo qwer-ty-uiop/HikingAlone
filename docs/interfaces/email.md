@@ -11,7 +11,8 @@
 - 验证码**不返回给前端**，只通过邮件送达；接口只返回 `{ sent }` 表示是否已发送
 - 验证码**一次性消费**：校验通过后立即从存储删除，防止重放
 - **冷却机制**：同一邮箱 60s 内不能重复发送（`sent=false`），防刷
-- **IP 限流（2026-10-25）**：单 IP 每小时最多 10 次（Redis 固定窗口计数 `email:ip:quota:<ip>`），封住「逐个换邮箱绕过单邮箱冷却」的刷接口路径；超限返回 400「发送过于频繁，请稍后再试」。IP 取 X-Forwarded-For **最后一个**元素（nginx 追加的真实客户端地址，不可伪造），直连取 remoteAddr
+- **IP 限流（2026-10-25）**：单 IP 每小时最多 10 次（Redis 固定窗口计数 `email:ip:quota:<ip>`），封住「逐个换邮箱绕过单邮箱冷却」的刷接口路径；超限返回 400「发送过于频繁，请稍后再试」。IP 取 X-Forwarded-For **最后一个**元素（nginx 追加的真实客户端地址，不可伪造），直连取 remoteAddr。
+已知局限：运营商 NAT 轮换出口（同用户逐请求换 IP）会分散计数、削弱配额——换取不过度拦截企业/校园出口的共享 IP，学习项目接受该权衡
 - **有效期**：5 分钟（300s），过期自动失效
 - **发件人必须与 SMTP 认证用户一致**：`SimpleMailMessage` 必须显式 `setFrom(spring.mail.username)`，否则 QQ 服务器返回 `501 Mail from address must be same as authorization user`（JavaMailSender 不会自动拿 username 当发件人）
 - 存储维度是 **email**（不是 code）——校验时只需定位「该邮箱存的那条验证码」
