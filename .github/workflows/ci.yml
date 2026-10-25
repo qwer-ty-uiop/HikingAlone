@@ -145,3 +145,12 @@ jobs:
             sleep 8
             # 自检：jar 替换后后端应能响应 /home
             curl -s -o /dev/null -w "backend /home -> %{http_code}\n" http://127.0.0.1:8080/home || echo "WARN: backend not responding yet"
+            # 自检 2（强校验）：/health 组件全 UP（MySQL/Redis 连通），不健康直接红；
+            # 重启后组件就绪有先后，给最多 30s 重试窗口
+            ok=""
+            for i in $(seq 1 15); do
+              if curl -fs http://127.0.0.1:8080/health | grep -q '"status":"UP"'; then ok=1; break; fi
+              sleep 2
+            done
+            curl -s http://127.0.0.1:8080/health; echo
+            test -n "$ok" || { echo "health check FAILED"; exit 1; }
